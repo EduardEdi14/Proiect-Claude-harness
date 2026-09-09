@@ -101,6 +101,9 @@ type detailsData struct {
 	Name        string
 	Description string
 	Error       string
+	// SkillPreset e true cand skill-ul a fost ales inainte de chat (link direct sau editare
+	// proiect). False inseamna ca agentul va pune intrebarea de tip in conversatie.
+	SkillPreset bool
 }
 
 type projectData struct {
@@ -217,11 +220,8 @@ func (s *Server) handleHelp(w http.ResponseWriter, r *http.Request, u *sessions.
 }
 
 func (s *Server) handleTools(w http.ResponseWriter, r *http.Request, u *sessions.User) {
-	s.rend.Page(w, http.StatusOK, "tools", toolsData{
-		Page:     Page{Title: "Alege instrumentul", Nav: "proiect-nou", SidebarFoot: "restricted", User: u},
-		Tools:    sessions.Tools,
-		Selected: r.URL.Query().Get("skill"),
-	})
+	// Selectia de instrument se face acum in conversatia de chat; redirectam direct.
+	http.Redirect(w, r, "/proiect-nou/detalii", http.StatusSeeOther)
 }
 
 // handleToolPick valideaza alegerea instrumentului. Fara selectie raspunde cu mesajul
@@ -240,14 +240,16 @@ func (s *Server) handleToolPick(w http.ResponseWriter, r *http.Request, u *sessi
 }
 
 func (s *Server) handleDetails(w http.ResponseWriter, r *http.Request, u *sessions.User) {
-	tool, ok := sessions.ToolByID(r.URL.Query().Get("skill"))
-	if !ok {
-		http.Redirect(w, r, "/proiect-nou", http.StatusSeeOther)
-		return
+	skillID := r.URL.Query().Get("skill")
+	tool, skillPreset := sessions.ToolByID(skillID)
+	// Fara skill in URL: folosim primul instrument ca implicit si lasam chat-ul sa intrebe.
+	if !skillPreset && len(sessions.Tools) > 0 {
+		tool = sessions.Tools[0]
 	}
 	s.rend.Page(w, http.StatusOK, "details", detailsData{
-		Page: Page{Title: "Detaliile proiectului", Nav: "proiect-nou", SidebarFoot: "restricted", User: u},
-		Tool: tool,
+		Page:        Page{Title: "Proiect nou", Nav: "proiect-nou", SidebarFoot: "restricted", User: u},
+		Tool:        tool,
+		SkillPreset: skillPreset,
 	})
 }
 
@@ -268,6 +270,7 @@ func (s *Server) handleProjectEdit(w http.ResponseWriter, r *http.Request, u *se
 		ProjectID:   p.ID,
 		Name:        p.Name,
 		Description: p.Description,
+		SkillPreset: true, // la editare skill-ul e deja cunoscut
 	})
 }
 
