@@ -1,0 +1,31 @@
+{{/* Un rand din lista de proiecte. Asteapta un *sessions.Project. */}}
+{{define "project-row"}}
+<div class="project-row">
+  <div class="row-icon{{if eq .SkillID "pagina-informare"}} row-icon--page{{end}}">
+    {{if eq .SkillID "pagina-informare"}}<span class="icon-page"></span>{{else}}<span class="icon-form"></span>{{end}}
+  </div>
+  <div class="row-body">
+    <div class="row-title">{{.Name}}</div>
+    <div class="row-meta">{{.SkillName}} · {{.Meta}}</div>
+  </div>
+  {{if eq .Status "handed_off"}}
+    <span class="badge badge--dev">Predat la Dev</span>
+  {{else if eq .Status "draft"}}
+    <span class="badge badge--draft">Ciornă</span>
+    <a class="btn btn--primary btn--sm" href="/proiect/{{.ID}}">Reia proiectul</a>
+  {{else if eq .Status "done"}}
+    <span class="badge badge--done">Finalizat</span>
+  {{else}}
+    <span class="badge badge--work">Se generează</span>
+  {{end}}
+</div>
+{{end}}
+
+{{/* Lista completa, folosita si ca fragment HTMX pentru cautare. */}}
+{{define "project-list"}}
+{{if .}}
+  {{range .}}{{template "project-row" .}}{{end}}
+{{else}}
+  <div class="empty">Niciun proiect încă. Pornește unul din „＋ Proiect nou”.</div>
+{{end}}
+{{end}}

@@ -1,0 +1,10 @@
+{{/* Pasii fluxului. Asteapta un int: 1 = Instrument, 2 = Detalii ghidate, 3 = Handoff. */}}
+{{define "stepper"}}
+<div class="stepper">
+  <span class="step{{if eq . 1}} is-active{{end}}"><span class="step-num">1</span>Instrument</span>
+  <span class="step-sep"></span>
+  <span class="step{{if eq . 2}} is-active{{end}}"><span class="step-num">2</span>Detalii ghidate</span>
+  <span class="step-sep"></span>
+  <span class="step{{if eq . 3}} is-active{{end}}"><span class="step-num">3</span>Handoff</span>
+</div>
+{{end}}

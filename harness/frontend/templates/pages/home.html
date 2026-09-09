@@ -1,0 +1,49 @@
+{{/* Ecranul 02 - Acasa. */}}
+{{define "body"}}
+<div class="app-shell">
+  {{template "sidebar" .}}
+  <div class="main">
+    {{template "topbar" .}}
+    <div class="content">
+      <div class="content-inner">
+
+        <div class="page-head">
+          <div>
+            <h1 class="title">Ce construim azi, {{.User.FirstName}}?</h1>
+            <div class="subtitle">{{.Stats.RecentPhrase}}</div>
+          </div>
+          <a class="btn btn--primary" href="/proiect-nou">Start proiect nou</a>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-num">{{.Stats.Total}}</div>
+            <div class="stat-label">proiecte</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num stat-num--red">{{.Stats.Drafts}}</div>
+            <div class="stat-label">ciornă</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">{{.Stats.HandedOff}}</div>
+            <div class="stat-label">la echipa Dev</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">{{.Stats.AvgTime}}</div>
+            <div class="stat-label">timp mediu</div>
+          </div>
+        </div>
+
+        <div class="panel panel--grow">
+          <div class="panel-head">
+            <span class="panel-title">Proiecte recente</span>
+            <a class="panel-link" href="/proiectele-mele">Vezi toate</a>
+          </div>
+          <div id="project-list">{{template "project-list" .Projects}}</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

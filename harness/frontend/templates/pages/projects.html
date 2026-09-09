@@ -1,0 +1,26 @@
+{{/* Proiectele mele - aceeasi lista ca pe Acasa, fara limita de randuri. */}}
+{{define "body"}}
+<div class="app-shell">
+  {{template "sidebar" .}}
+  <div class="main">
+    {{template "topbar" .}}
+    <div class="content">
+      <div class="content-inner">
+
+        <div class="page-head">
+          <div>
+            <h1 class="title">Proiectele mele</h1>
+            <div class="subtitle">Ciornele pot fi reluate; ce a plecat la Dev rămâne în jurnal.</div>
+          </div>
+          <a class="btn btn--primary" href="/proiect-nou">Start proiect nou</a>
+        </div>
+
+        <div class="panel panel--grow">
+          <div id="project-list">{{template "project-list" .Projects}}</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

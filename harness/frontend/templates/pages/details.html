@@ -1,0 +1,69 @@
+{{/* Ecranul 04 - Detaliile proiectului. */}}
+{{define "body"}}
+<div class="app-shell">
+  {{template "sidebar" .}}
+  <div class="main">
+    <div class="content content--wizard">
+      <div class="content-inner">
+
+        {{template "stepper" 2}}
+
+        <div class="detail-cols">
+          <form class="detail-main" hx-post="/proiect-nou/detalii" hx-target="#detail-error" hx-swap="innerHTML">
+            <input type="hidden" name="skill_id" value="{{.Tool.ID}}">
+            {{if .ProjectID}}<input type="hidden" name="project_id" value="{{.ProjectID}}">{{end}}
+
+            <div class="pill-row">
+              <span class="tool-pill">
+                {{if eq .Tool.Icon "page"}}<span class="icon-page"></span>{{else}}<span class="icon-form"></span>{{end}}
+                {{.Tool.ShortName}}
+              </span>
+              <span class="pill-note">instrument ales · <a href="/proiect-nou">schimbă</a></span>
+            </div>
+
+            <div>
+              <h1 class="title title--sm">Spune-ne ce vrei să conțină pagina</h1>
+              <div class="subtitle">Scrie ca și cum ai explica unui coleg.</div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="project-name">Numele proiectului</label>
+              <input class="input" id="project-name" name="name" type="text" maxlength="120"
+                     value="{{.Name}}" placeholder="Green Week — înscrieri" required>
+            </div>
+
+            <div class="field field--grow">
+              <div class="field-head">
+                <label class="label" for="project-description">Descrie ce vrei să conțină pagina</label>
+                <span class="counter" data-counter-for="project-description">0 / 2000</span>
+              </div>
+              <textarea class="textarea" id="project-description" name="description" maxlength="2000"
+                        data-counter placeholder="O pagină pentru campania internă „Green Week”: o scurtă introducere despre programul de colectare selectivă, lista punctelor de reciclare din sediu și un formular de înscriere cu nume, departament, e-mail și ziua în care vrei să participi."
+                        required>{{.Description}}</textarea>
+            </div>
+
+            <div id="detail-error">{{if .Error}}<p class="form-error">{{.Error}}</p>{{end}}</div>
+
+            <div class="btn-row btn-row--end">
+              <a class="btn btn--ghost" href="/proiect-nou">Înapoi</a>
+              <button class="btn btn--primary" type="submit">Construiește pagina</button>
+            </div>
+          </form>
+
+          <aside class="detail-aside">
+            <div class="illus">ilustrație „libra maker”</div>
+            <div class="aside-title">Trei detalii care ajută mult</div>
+            <div class="tips">
+              <div class="tip"><span class="dot"></span>Cine e publicul paginii</div>
+              <div class="tip"><span class="dot"></span>Ce informații trebuie să apară</div>
+              <div class="tip"><span class="dot"></span>Ce vrei să facă vizitatorul</div>
+            </div>
+            <div class="aside-note">Lucrăm într-un spațiu izolat, doar pentru proiectul tău.</div>
+          </aside>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

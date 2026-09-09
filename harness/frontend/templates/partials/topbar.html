@@ -1,0 +1,15 @@
+{{/* Bara de sus: cautare (HTMX, filtreaza lista fara reload) + utilizatorul curent. */}}
+{{define "topbar"}}
+<header class="topbar">
+  <input class="search" type="search" name="q" placeholder="Caută un proiect…"
+         hx-get="/proiecte/cauta"
+         hx-trigger="keyup changed delay:300ms, search"
+         hx-target="#project-list"
+         hx-swap="innerHTML"
+         aria-label="Caută un proiect">
+  <div class="user">
+    <span class="avatar">{{.User.Initials}}</span>
+    <span class="user-name">{{.User.Name}}</span>
+  </div>
+</header>
+{{end}}

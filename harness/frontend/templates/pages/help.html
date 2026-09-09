@@ -1,0 +1,52 @@
+{{/* Ajutor - exista ca element de meniu in mockup (ecranul 02), fara ecran propriu desenat.
+     Pagina reia blocurile deja definite in design: limitele instrumentelor si regulile de handoff. */}}
+{{define "body"}}
+<div class="app-shell">
+  {{template "sidebar" .}}
+  <div class="main">
+    {{template "topbar" .}}
+    <div class="content">
+      <div class="content-inner">
+
+        <div class="page-head">
+          <div>
+            <h1 class="title">Cum funcționează Libra Maker</h1>
+            <div class="subtitle">Trei lucruri de știut înainte să pornești un proiect.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Ce poți construi</div>
+          <div class="tips">
+            <div class="tip"><span class="dot"></span><b>Pagină de informare</b>&nbsp;— titlu, text, imagine și listă de puncte. O singură pagină statică.</div>
+            <div class="tip"><span class="dot"></span><b>Formular de colectare</b>&nbsp;— pagină cu câmpuri de completat și confirmare la trimitere.</div>
+          </div>
+        </div>
+
+        <div class="limits">
+          <div class="limits-title">CE NU POATE FACE</div>
+          <div class="limits-list">
+            <span class="chip">nu accesează internetul</span>
+            <span class="chip">nu citește alte sisteme</span>
+            <span class="chip">nu instalează pachete</span>
+            <span class="chip">nu publică singur</span>
+          </div>
+        </div>
+
+        <div class="panel panel--grow">
+          <div class="panel-title">Fără cale de ocolire</div>
+          <div class="tips">
+            <div class="tip"><span class="dot"></span>Nu există buton de publicare pentru utilizatorul de business — singura ieșire din Libra Maker este cererea către Dev.</div>
+            <div class="tip"><span class="dot"></span>Nu există mod „avansat”, terminal sau prompt liber. Cele două skill-uri sunt tot ce se poate rula.</div>
+            <div class="tip"><span class="dot"></span>Fiecare sesiune rămâne în jurnal: cine, ce skill, ce câmpuri, ce cod.</div>
+          </div>
+          <form method="post" action="/logout" style="margin-top:auto">
+            <button class="btn btn--ghost" type="submit">Ieși din cont</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

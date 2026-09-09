@@ -1,0 +1,63 @@
+{{/* Ecranul 03 - Alegerea instrumentului (cele doua skill-uri aprobate). */}}
+{{define "body"}}
+<div class="app-shell">
+  {{template "sidebar" .}}
+  <div class="main">
+    <div class="content content--wizard">
+      <div class="content-inner">
+
+        {{template "stepper" 1}}
+
+        <div>
+          <h1 class="title title--sm">Alege unul din cele două instrumente</h1>
+          <div class="subtitle subtitle--wide">Libra Maker are exact două skill-uri aprobate. Nu există opțiune „altceva” — asta ține rezultatul previzibil și revizuibil.</div>
+        </div>
+
+        <form hx-post="/proiect-nou/instrument" hx-target="#tool-error" hx-swap="innerHTML"
+              style="display:flex;flex-direction:column;gap:20px;flex:1">
+
+          <div class="tools">
+            {{range $t := .Tools}}
+            <label>
+              <input class="tool-input" type="radio" name="skill_id" value="{{$t.ID}}"
+                     {{if eq $.Selected $t.ID}}checked{{end}}>
+              <span class="tool-card">
+                <span class="tool-check">✓</span>
+                <span class="tool-icon{{if eq $t.Icon "page"}} tool-icon--page{{end}}">
+                  {{if eq $t.Icon "page"}}<span class="icon-page" style="width:16px"></span>{{else}}<span class="icon-form"></span>{{end}}
+                </span>
+                <span>
+                  <span class="tool-name">{{$t.Name}}</span>
+                  <span class="tool-desc" style="display:block">{{$t.Desc}}</span>
+                </span>
+                <span class="tags">
+                  {{range $tag := $t.Tags}}<span class="tag">{{$tag}}</span>{{end}}
+                </span>
+              </span>
+            </label>
+            {{end}}
+          </div>
+
+          <div id="tool-error">{{if .Error}}<p class="form-error">{{.Error}}</p>{{end}}</div>
+
+          <div class="limits">
+            <div class="limits-title">CE NU POATE FACE</div>
+            <div class="limits-list">
+              <span class="chip">nu accesează internetul</span>
+              <span class="chip">nu citește alte sisteme</span>
+              <span class="chip">nu instalează pachete</span>
+              <span class="chip">nu publică singur</span>
+            </div>
+          </div>
+
+          <div class="btn-row btn-row--end" style="margin-top:auto">
+            <a class="btn btn--ghost" href="/acasa">Înapoi</a>
+            <button class="btn btn--primary" type="submit">Continuă</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

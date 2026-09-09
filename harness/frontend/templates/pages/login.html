@@ -1,0 +1,35 @@
+{{/* Ecranul 01 - Autentificare (SSO intern). */}}
+{{define "body"}}
+<main class="auth">
+  <section class="auth-panel">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+
+    <div class="auth-brand">
+      <span class="brand-chip brand-chip--lg">{{template "mark"}}</span>
+      <span class="auth-brand-name">Libra Maker</span>
+    </div>
+
+    <div class="auth-copy">
+      <h1 class="auth-headline">Pagini interne,<br>fără o linie de cod.</h1>
+      <p class="auth-lede">Descrii ce ai nevoie, noi construim pagina, iar echipa de dezvoltare o revizuiește înainte de publicare.</p>
+    </div>
+
+    <div class="auth-facts">
+      <span>Sesiuni izolate</span><span>Fără date expuse</span><span>Revizuit de Dev</span>
+    </div>
+  </section>
+
+  <section class="auth-form-col">
+    <form class="auth-form" method="post" action="/auth/sso">
+      <div>
+        <div class="auth-title">Bine ai venit!</div>
+        <div class="auth-sub">Autentifică-te cu contul companiei.</div>
+      </div>
+      <button class="btn btn--primary btn--block" type="submit">Continuă cu contul companiei</button>
+      <div class="auth-divider"><span class="rule"></span><span>SSO intern</span><span class="rule"></span></div>
+      <p class="auth-note">Nu ai cont? Contul de intranet îți dă acces automat, la prima autentificare.</p>
+    </form>
+  </section>
+</main>
+{{end}}

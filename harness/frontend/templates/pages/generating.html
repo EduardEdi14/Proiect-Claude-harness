@@ -1,0 +1,28 @@
+{{/* Stare de tranzitie intre ecranul 04 si 05: sesiunea e in coada / ruleaza in container.
+     Nu exista in mockup (fluxul acolo sare direct la rezultat), dar generarea e asincrona,
+     asa ca pagina se auto-reimprospateaza prin HTMX pana cand sesiunea e gata. */}}
+{{define "body"}}
+<div class="app-shell">
+  {{template "sidebar" .}}
+  <div class="main">
+    <div class="content content--wizard">
+      <div class="content-inner">
+
+        {{template "stepper" 2}}
+
+        <div class="generating"
+             hx-get="/proiect/{{.Project.ID}}/status"
+             hx-trigger="every 1500ms"
+             hx-swap="none">
+          <div class="gen-mark">{{template "mark"}}</div>
+          <h1 class="title title--sm">Construim pagina „{{.Project.Name}}”</h1>
+          <div class="subtitle">Durează în jur de un minut. Poți lăsa fila deschisă.</div>
+          <div class="gen-bar"><span></span></div>
+          <div class="note">Rulăm într-un container izolat, doar pentru proiectul tău.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,31 @@
+{{/* Meniul lateral. Asteapta .Nav (elementul activ) si .SidebarFoot ("promo" | "restricted"). */}}
+{{define "sidebar"}}
+<aside class="sidebar">
+  <a class="brand" href="/acasa">
+    <span class="brand-chip">{{template "mark"}}</span>
+    <span class="brand-name">Libra Maker</span>
+  </a>
+
+  <nav class="nav">
+    <a class="nav-item{{if eq .Nav "acasa"}} is-active{{end}}" href="/acasa">Acasă</a>
+    <a class="nav-item{{if eq .Nav "proiectele-mele"}} is-active{{end}}" href="/proiectele-mele">Proiectele mele</a>
+    <a class="nav-cta" href="/proiect-nou"><span class="plus">＋</span>Proiect nou</a>
+    <a class="nav-item{{if eq .Nav "ajutor"}} is-active{{end}}" href="/ajutor">Ajutor</a>
+  </nav>
+
+  <div class="side-foot">
+    {{if eq .SidebarFoot "promo"}}
+    <div class="side-card">
+      <div class="side-card-title">Ai o idee de pagină?</div>
+      <div class="side-card-text">Durează sub un minut să o pornești.</div>
+      <a class="side-card-btn" href="/proiect-nou">Start proiect nou</a>
+    </div>
+    {{else if eq .SidebarFoot "restricted"}}
+    <div class="side-badge">
+      <div class="side-badge-head"><span class="lock"></span><span>MOD RESTRICȚIONAT</span></div>
+      <div class="side-badge-text">Doar cele 2 instrumente aprobate. Fără acces la fișiere, rețea sau alte proiecte.</div>
+    </div>
+    {{end}}
+  </div>
+</aside>
+{{end}}

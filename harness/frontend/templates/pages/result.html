@@ -1,0 +1,57 @@
+{{/* Ecranul 05 - Rezultatul. */}}
+{{define "body"}}
+<div class="focus-shell">
+  <main class="focus-main">
+    <div class="focus-inner">
+
+      <div class="result-head">
+        <div class="check-badge">✓</div>
+        <div>
+          <h1 class="title">Pagina ta e pregătită</h1>
+          <div class="subtitle">Aruncă un ochi. Dacă arată bine, o trimiți echipei de dezvoltare.</div>
+        </div>
+      </div>
+
+      <div class="preview">
+        <div class="preview-bar">
+          <span class="dot dot--r"></span><span class="dot dot--y"></span><span class="dot dot--g"></span>
+          <span class="preview-file">previzualizare · {{.Project.FileName}}</span>
+        </div>
+        <div class="preview-body">
+          <div class="preview-title">{{.Project.Name}}</div>
+          <div class="preview-text">{{.Project.Summary}}</div>
+          <div class="preview-cols">
+            <div class="preview-img">imagine campanie</div>
+            <div class="preview-fields">
+              <div class="ph-line"></div>
+              <div class="ph-input"></div>
+              <div class="ph-input"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn--primary btn--lg" type="button"
+                hx-post="/proiect/{{.Project.ID}}/handoff" hx-swap="none">Trimite la echipa Dev</button>
+        <a class="btn btn--ghost btn--lg" href="/proiect/{{.Project.ID}}/detalii">Mai schimb ceva</a>
+        <a class="btn btn--link" href="/acasa">↩ Acasă</a>
+      </div>
+
+      <div class="note">Proiectul rămâne salvat ca ciornă — îl reiei de pe pagina Acasă.</div>
+
+    </div>
+  </main>
+
+  <aside class="side-panel">
+    <div class="side-panel-mark">{{template "mark-lg"}}</div>
+    <div class="side-panel-title">Nimic nu se publică singur</div>
+    <div class="side-panel-text">Echipa de dezvoltare primește codul, îl revizuiește și îl publică pe intranet. Primești o notificare când e live.</div>
+    <div class="side-panel-list">
+      <div class="side-step is-current"><span class="n">1</span>Trimiți proiectul</div>
+      <div class="side-step"><span class="n">2</span>Dev revizuiește</div>
+      <div class="side-step"><span class="n">3</span>Publicare pe intranet</div>
+    </div>
+  </aside>
+</div>
+{{end}}

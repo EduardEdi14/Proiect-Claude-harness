@@ -1,0 +1,4 @@
+workspaces sunt create la runtime de backend-ul Go; continutul nu se versioneaza
+*
+!.gitignore
+!.gitkeep
