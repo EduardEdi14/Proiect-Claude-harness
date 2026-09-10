@@ -204,6 +204,10 @@ app.get('/proiect-nou/detalii', auth((req, res) => {
   const skillPreset = !!tool;
   if (!tool && TOOLS.length > 0) tool = TOOLS[0];
 
+  // ?tpl= vine din cardurile "Descopera" de pe pagina Acasa: descrierea
+  // sablonului, cu care pre-completam prima replica din conversatie.
+  const preset = typeof req.query.tpl === 'string' ? req.query.tpl.slice(0, 2000) : '';
+
   return res.render('pages/details.html', {
     title:       'Proiect nou',
     nav:         'proiect-nou',
@@ -214,6 +218,7 @@ app.get('/proiect-nou/detalii', auth((req, res) => {
     projectID:   '',
     name:        '',
     description: '',
+    preset,
     error:       '',
   });
 }));

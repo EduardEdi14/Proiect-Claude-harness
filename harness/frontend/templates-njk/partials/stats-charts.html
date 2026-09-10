@@ -1,0 +1,145 @@
+{# Panoul de activitate: patru cifre de titlu + doua grafice.
+   Cifrele raman cifre — o valoare singura nu devine mai clara desenata ca bara.
+   Graficele arata ce cifrele nu pot: ritmul pe saptamani si compozitia pe etape. #}
+<div class="viz">
+
+  <div class="stats">
+
+    <div class="stat stat--1">
+      <span class="stat-chip" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
+          <rect x="2.5" y="3.5" width="15" height="13" rx="2.5" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M2.5 7.5h15M7 3.5v4" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+      </span>
+      <span class="stat-body">
+        <span class="stat-num" data-count="{{ stats.total }}">{{ stats.total }}</span>
+        <span class="stat-label">proiecte</span>
+      </span>
+    </div>
+
+    <div class="stat stat--2">
+      <span class="stat-chip" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
+          <path d="M11.5 2.5H5.5A2 2 0 003.5 4.5v11a2 2 0 002 2h9a2 2 0 002-2V7.5l-5-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M11.5 2.5v5h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="stat-body">
+        <span class="stat-num stat-num--red" data-count="{{ stats.drafts }}">{{ stats.drafts }}</span>
+        <span class="stat-label">ciornă</span>
+      </span>
+    </div>
+
+    <div class="stat stat--3">
+      {% if stats.inWork > 0 %}<span class="stat-live" title="{{ stats.inWork }} în lucru acum"></span>{% endif %}
+      <span class="stat-chip" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
+          <path d="M3 10h11M10 5.5l4.5 4.5L10 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M17 3.5v13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="stat-body">
+        <span class="stat-num" data-count="{{ stats.handedOff }}">{{ stats.handedOff }}</span>
+        <span class="stat-label">la echipa Dev</span>
+      </span>
+    </div>
+
+    <div class="stat stat--4">
+      <span class="stat-chip" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10.5" r="6.8" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M10 6.8v3.9l2.6 1.6M7.6 2.6h4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="stat-body">
+        {# Cifra se anima doar cand exista o masuratoare; altfel ramane liniuta. #}
+        <span class="stat-num"{% if stats.avgSec > 0 %} data-count="{{ stats.avgSec }}" data-suffix="s"{% endif %}>{{ stats.avgTime }}</span>
+        <span class="stat-label">timp mediu</span>
+      </span>
+    </div>
+
+  </div>
+
+  <div class="viz-row">
+
+    {# ---- Coloane: cate proiecte ai pornit in fiecare saptamana ---- #}
+    <div class="viz-card">
+      <div class="viz-head">
+        <span class="viz-title">Proiecte pornite pe săptămână</span>
+        <span class="viz-sub">Ultimele 8 săptămâni · {{ stats.weeksTotal }} în total</span>
+      </div>
+
+      {% if stats.weeksTotal > 0 %}
+        <div class="viz-cols">
+          {% for w in stats.weeks %}
+          <div class="col" tabindex="0">
+            <span class="col-tip">{{ w.label }} · {{ w.count }} proiect{% if w.count != 1 %}e{% endif %}</span>
+            {% if w.isPeak %}<span class="col-cap" style="bottom:calc({{ w.height }}% + 5px)">{{ w.count }}</span>{% endif %}
+            {% if w.count > 0 %}
+              <span class="col-fill" style="height:{{ w.height }}%"></span>
+            {% else %}
+              <span class="col-zero"></span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="viz-xaxis">
+          {% for w in stats.weeks %}<span>{{ w.label }}</span>{% endfor %}
+        </div>
+      {% else %}
+        <div class="viz-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="viz-empty">Încă niciun proiect pornit.<br>Primul apare aici imediat ce îl construiești.</div>
+      {% endif %}
+    </div>
+
+    {# ---- Bara stivuita: unde sunt proiectele in flux ---- #}
+    <div class="viz-card">
+      <div class="viz-head">
+        <span class="viz-title">Unde sunt proiectele tale</span>
+        <span class="viz-sub">
+          {% if stats.inWork > 0 %}{{ stats.inWork }} în lucru chiar acum{% else %}Etapele fluxului, de la ciornă la publicare{% endif %}
+        </span>
+      </div>
+
+      {% if stats.stagesTotal > 0 %}
+        {# Latimea segmentelor vine din flex, proportional cu numarul —
+           asa insumeaza exact, fara resturi din rotunjirea procentelor. #}
+        <div class="viz-stack">
+          {% for s in stats.stages %}{% if s.count > 0 %}
+          <span class="seg seg--{{ loop.index }}" style="flex:{{ s.count }}" tabindex="0">
+            <span class="col-tip">{{ s.label }} · {{ s.count }} ({{ s.pct }}%)</span>
+          </span>
+          {% endif %}{% endfor %}
+        </div>
+
+        {# Legenda e mereu prezenta: identitatea nu se sprijina doar pe culoare. #}
+        <div class="viz-legend">
+          {% for s in stats.stages %}
+          <div class="lg">
+            <span class="lg-dot" style="background:var(--stage-{{ loop.index }})"></span>
+            <span class="lg-name">{{ s.label }}</span>
+            <span class="lg-num">{{ s.count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <details class="viz-table">
+          <summary>Vezi cifrele ca tabel</summary>
+          <table>
+            <thead><tr><th scope="col">Etapă</th><th scope="col">Proiecte</th><th scope="col">Pondere</th></tr></thead>
+            <tbody>
+              {% for s in stats.stages %}
+              <tr><td>{{ s.label }}</td><td>{{ s.count }}</td><td>{{ s.pct }}%</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </details>
+      {% else %}
+        <div class="viz-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="viz-empty">Nimic în flux încă.<br>Aici vezi câte proiecte sunt ciornă, la Dev sau finalizate.</div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>

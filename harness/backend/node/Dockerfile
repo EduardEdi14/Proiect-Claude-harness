@@ -10,17 +10,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 && \
 WORKDIR /app
 
 # Copiem mai intai package.json pentru cache layer
-COPY backend/node/package.json backend/node/package-lock.json* ./node/
-RUN cd node && npm ci --only=production
+COPY backend/node/package.json backend/node/package-lock.json* ./backend/node/
+RUN cd backend/node && npm ci --only=production
 
 # Copiem codul Node.js si Python
-COPY backend/node/   ./node/
-COPY backend/python/ ./python/
+COPY backend/node/   ./backend/node/
+COPY backend/python/ ./backend/python/
 
 # Copiem frontend-ul (template-urile Nunjucks si fisierele statice)
 COPY frontend/ ./frontend/
 
-WORKDIR /app/node
+WORKDIR /app/backend/node
 
 EXPOSE 8080
 

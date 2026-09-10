@@ -357,7 +357,7 @@ class Store {
 
     // Incearca Python runner; daca nu e disponibil, simuleaza
     const runnerPath = path.join(__dirname, '../python/runner.py');
-    const wsPath     = path.join(__dirname, '../../..', project.workspacePath);
+    const wsPath     = path.join(__dirname, '../..', project.workspacePath);
 
     const py = spawn('python3', [
       runnerPath,
@@ -414,13 +414,65 @@ class Store {
       if (p.durationSec > 0) { totalSec += p.durationSec; counted++; }
     }
 
-    if (counted > 0) st.avgTime = `${Math.round(totalSec / counted)}s`;
+    // avgSec e valoarea bruta, pentru animatia de numarare din interfata;
+    // avgTime ramane textul afisat (cu '—' cand nu avem nicio masuratoare).
+    st.avgSec = counted > 0 ? Math.round(totalSec / counted) : 0;
+    if (counted > 0) st.avgTime = `${st.avgSec}s`;
 
     const cutoff = new Date(Date.now() - 14 * 86400000);
     const recent = all.filter(p => p.createdAt > cutoff).length;
     if (recent === 0) st.recentPhrase = 'Niciun proiect în ultimele două săptămâni.';
     else if (recent === 1) st.recentPhrase = 'Ai un proiect în ultimele două săptămâni.';
     else st.recentPhrase = `Ai ${recent} proiecte în ultimele două săptămâni.`;
+
+    // ---- serii pentru grafice --------------------------------------
+    // Statusurile sunt etapele unui flux (ciorna -> la Dev -> finalizat), deci
+    // se coloreaza cu o singura nuanta in trepte, nu cu culori de identitate.
+    const inWork = all.filter(p => p.status === STATUS.QUEUED || p.status === STATUS.RUNNING).length;
+    const done   = all.filter(p => p.status === STATUS.DONE).length;
+    const handed = all.filter(p => p.status === STATUS.HANDED_OFF).length;
+
+    st.stages = [
+      { key: 'draft',  label: 'Ciornă',        count: st.drafts },
+      { key: 'handed', label: 'La echipa Dev', count: handed },
+      { key: 'done',   label: 'Finalizat',    count: done },
+    ];
+    st.stagesTotal = st.drafts + handed + done;
+    st.inWork = inWork;
+
+    // Procentele se calculeaza aici, nu in sablon: latimea segmentelor din
+    // bara stivuita trebuie sa insumeze exact 100%.
+    for (const s of st.stages) {
+      s.pct = st.stagesTotal > 0 ? Math.round((s.count / st.stagesTotal) * 1000) / 10 : 0;
+    }
+
+    // Ultimele 8 saptamani, cea mai veche prima. Saptamana incepe luni.
+    const weeks = [];
+    const monday = new Date();
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+
+    for (let i = 7; i >= 0; i--) {
+      const from = new Date(monday);
+      from.setDate(from.getDate() - i * 7);
+      const to = new Date(from);
+      to.setDate(to.getDate() + 7);
+      weeks.push({
+        from,
+        to,
+        label: `${from.getDate()} ${MONTHS_RO[from.getMonth()]}`,
+        count: all.filter(p => p.createdAt >= from && p.createdAt < to).length,
+      });
+    }
+
+    const peak = weeks.reduce((m, w) => Math.max(m, w.count), 0);
+    st.weeks    = weeks.map(w => Object.assign({}, w, {
+      // Inaltimea coloanei ca procent din maxim; 0 ramane 0, fara ciot vizibil.
+      height: peak > 0 ? Math.round((w.count / peak) * 100) : 0,
+      isPeak: peak > 0 && w.count === peak,
+    }));
+    st.weeksPeak  = peak;
+    st.weeksTotal = weeks.reduce((n, w) => n + w.count, 0);
 
     return st;
   }
