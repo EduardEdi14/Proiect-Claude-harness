@@ -415,6 +415,7 @@ class Store {
       total:     parseInt(row.total, 10),
       drafts:    parseInt(row.drafts, 10),
       handedOff: parseInt(row.handed_off, 10),
+      avgSec:    row.avg_sec ? Math.round(parseFloat(row.avg_sec)) : 0,
       avgTime:   row.avg_sec ? `${Math.round(parseFloat(row.avg_sec))}s` : '—',
       recentPhrase: '',
     };
@@ -422,6 +423,77 @@ class Store {
     if (recent === 0)      st.recentPhrase = 'Niciun proiect în ultimele două săptămâni.';
     else if (recent === 1) st.recentPhrase = 'Ai un proiect în ultimele două săptămâni.';
     else                   st.recentPhrase = `Ai ${recent} proiecte în ultimele două săptămâni.`;
+    return this._statsSeries(userID, st);
+  }
+
+  /**
+   * Serii pentru graficele din pagina Acasa, adaugate peste cifrele de titlu.
+   *
+   * - stages: cate proiecte sunt in fiecare etapa a fluxului. Etapele sunt
+   *   ordonate (ciorna -> la Dev -> finalizat), deci interfata le coloreaza
+   *   cu o singura nuanta in trepte, nu cu culori de identitate.
+   * - weeks: ultimele 8 saptamani (luni-duminica), cea mai veche prima.
+   *   Saptamanile fara proiecte raman in serie, cu zero - altfel graficul ar
+   *   comprima golurile si ar minti despre ritm.
+   */
+  async _statsSeries(userID, st) {
+    const stages = await this.pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status='draft')      AS draft,
+         COUNT(*) FILTER (WHERE status='handed_off') AS handed,
+         COUNT(*) FILTER (WHERE status='done')       AS done,
+         COUNT(*) FILTER (WHERE status IN ('queued','running')) AS in_work
+       FROM projects WHERE user_id=$1`,
+      [userID]
+    );
+    const sr = stages.rows[0];
+    const n  = (v) => parseInt(v, 10) || 0;
+
+    st.inWork = n(sr.in_work);
+    st.stages = [
+      { key: 'draft',  label: 'Ciornă',        count: n(sr.draft)  },
+      { key: 'handed', label: 'La echipa Dev', count: n(sr.handed) },
+      { key: 'done',   label: 'Finalizat',     count: n(sr.done)   },
+    ];
+    st.stagesTotal = st.stages.reduce((t, s) => t + s.count, 0);
+    for (const s of st.stages) {
+      s.pct = st.stagesTotal > 0 ? Math.round((s.count / st.stagesTotal) * 1000) / 10 : 0;
+    }
+
+    // generate_series produce si saptamanile goale, ca seria sa fie continua.
+    const weeks = await this.pool.query(
+      `SELECT w AS week_start,
+              COUNT(p.id) AS count
+         FROM generate_series(
+                date_trunc('week', NOW()) - INTERVAL '7 weeks',
+                date_trunc('week', NOW()),
+                INTERVAL '1 week'
+              ) AS w
+         LEFT JOIN projects p
+                ON p.user_id = $1
+               AND p.created_at >= w
+               AND p.created_at <  w + INTERVAL '1 week'
+        GROUP BY w
+        ORDER BY w`,
+      [userID]
+    );
+
+    const rows = weeks.rows.map(r => ({
+      date:  new Date(r.week_start),
+      count: n(r.count),
+    }));
+    const peak = rows.reduce((m, r) => Math.max(m, r.count), 0);
+
+    st.weeks = rows.map(r => ({
+      label:  `${r.date.getDate()} ${MONTHS_RO[r.date.getMonth()]}`,
+      count:  r.count,
+      // Inaltimea coloanei ca procent din varf; fara proiecte totul ramane 0.
+      height: peak > 0 ? Math.round((r.count / peak) * 100) : 0,
+      isPeak: peak > 0 && r.count === peak,
+    }));
+    st.weeksPeak  = peak;
+    st.weeksTotal = rows.reduce((t, r) => t + r.count, 0);
+
     return st;
   }
 
@@ -442,7 +514,9 @@ class Store {
       if (!project) return;
 
       const runnerPath = path.join(__dirname, '../python/runner.py');
-      const wsPath     = path.join(__dirname, '../../..', project.workspacePath);
+      // Doua niveluri, nu trei: workspaces/ e langa backend/, deci
+      // fisierele generate trebuie sa cada in volumul montat /app/workspaces.
+      const wsPath     = path.join(__dirname, '../..', project.workspacePath);
 
       const py = spawn('python3', [
         runnerPath,
@@ -486,4 +560,4 @@ class Store {
   }
 }
 
-module.exports = { STATUS, TOOLS, toolByID, User, Project, Store };
+module.exports = { STATUS, TOOLS, toolByID, User, Project, Store, MONTHS_RO };

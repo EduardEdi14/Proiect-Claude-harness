@@ -15,7 +15,7 @@ const { spawn } = require('child_process');
 const bcrypt  = require('bcryptjs');
 
 const db = require('./db');
-const { STATUS, TOOLS, toolByID, User, Project } = require('./store');
+const { STATUS, TOOLS, toolByID, User, Project, MONTHS_RO } = require('./store');
 
 // ---------- helpers (same as store.js) ----------
 
@@ -206,13 +206,86 @@ class PgStore {
     else if (recent === 1) recentPhrase = 'Ai un proiect în ultimele două săptămâni.';
     else                   recentPhrase = `Ai ${recent} proiecte în ultimele două săptămâni.`;
 
-    return {
+    const st = {
       total:        parseInt(r.total, 10),
       drafts:       parseInt(r.drafts, 10),
       handedOff:    parseInt(r.handed_off, 10),
+      avgSec:       r.avg_sec ? parseInt(r.avg_sec, 10) : 0,
       avgTime,
       recentPhrase,
     };
+    return this._statsSeries(userID, st);
+  }
+
+  /**
+   * Serii pentru graficele din pagina Acasa, adaugate peste cifrele de titlu.
+   *
+   * - stages: cate proiecte sunt in fiecare etapa a fluxului. Etapele sunt
+   *   ordonate (ciorna -> la Dev -> finalizat), deci interfata le coloreaza
+   *   cu o singura nuanta in trepte, nu cu culori de identitate.
+   * - weeks: ultimele 8 saptamani (luni-duminica), cea mai veche prima.
+   *   Saptamanile fara proiecte raman in serie, cu zero - altfel graficul ar
+   *   comprima golurile si ar minti despre ritm.
+   */
+  async _statsSeries(userID, st) {
+    const stages = await db.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status='draft')      AS draft,
+         COUNT(*) FILTER (WHERE status='handed_off') AS handed,
+         COUNT(*) FILTER (WHERE status='done')       AS done,
+         COUNT(*) FILTER (WHERE status IN ('queued','running')) AS in_work
+       FROM sessions WHERE user_id=$1`,
+      [userID]
+    );
+    const sr = stages.rows[0];
+    const n  = (v) => parseInt(v, 10) || 0;
+
+    st.inWork = n(sr.in_work);
+    st.stages = [
+      { key: 'draft',  label: 'Ciornă',        count: n(sr.draft)  },
+      { key: 'handed', label: 'La echipa Dev', count: n(sr.handed) },
+      { key: 'done',   label: 'Finalizat',     count: n(sr.done)   },
+    ];
+    st.stagesTotal = st.stages.reduce((t, s) => t + s.count, 0);
+    for (const s of st.stages) {
+      s.pct = st.stagesTotal > 0 ? Math.round((s.count / st.stagesTotal) * 1000) / 10 : 0;
+    }
+
+    // generate_series produce si saptamanile goale, ca seria sa fie continua.
+    const weeks = await db.query(
+      `SELECT w AS week_start,
+              COUNT(p.id) AS count
+         FROM generate_series(
+                date_trunc('week', NOW()) - INTERVAL '7 weeks',
+                date_trunc('week', NOW()),
+                INTERVAL '1 week'
+              ) AS w
+         LEFT JOIN sessions p
+                ON p.user_id = $1
+               AND p.created_at >= w
+               AND p.created_at <  w + INTERVAL '1 week'
+        GROUP BY w
+        ORDER BY w`,
+      [userID]
+    );
+
+    const rows = weeks.rows.map(r => ({
+      date:  new Date(r.week_start),
+      count: n(r.count),
+    }));
+    const peak = rows.reduce((m, r) => Math.max(m, r.count), 0);
+
+    st.weeks = rows.map(r => ({
+      label:  `${r.date.getDate()} ${MONTHS_RO[r.date.getMonth()]}`,
+      count:  r.count,
+      // Inaltimea coloanei ca procent din varf; fara proiecte totul ramane 0.
+      height: peak > 0 ? Math.round((r.count / peak) * 100) : 0,
+      isPeak: peak > 0 && r.count === peak,
+    }));
+    st.weeksPeak  = peak;
+    st.weeksTotal = rows.reduce((t, r) => t + r.count, 0);
+
+    return st;
   }
 
   // ---------- runner (same logic as in-memory store) ----------
