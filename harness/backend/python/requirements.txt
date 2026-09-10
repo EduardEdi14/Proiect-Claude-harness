@@ -1,0 +1,8 @@
+# harness/backend/python/requirements.txt
+# Python runner pentru Libra Maker.
+# Nu are dependente externe — foloseste exclusiv stdlib (subprocess, json, os, argparse, time).
+#
+# Daca adaugi integrare directa cu Anthropic API (ocolitind claude CLI):
+#   anthropic>=0.25.0
+#
+# Versiune Python recomandata: 3.11+

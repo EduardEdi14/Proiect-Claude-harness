@@ -1,0 +1,26 @@
+{# Lista proiecte — folosita si ca fragment HTMX pentru cautare. Variabila: projects. #}
+{% if projects and projects.length > 0 %}
+  {% for p in projects %}
+  <div class="project-row">
+    <div class="row-icon{% if p.skillID == 'pagina-informare' %} row-icon--page{% endif %}">
+      {% if p.skillID == 'pagina-informare' %}<span class="icon-page"></span>{% else %}<span class="icon-form"></span>{% endif %}
+    </div>
+    <div class="row-body">
+      <div class="row-title">{{ p.name }}</div>
+      <div class="row-meta">{{ p.skillName() }} · {{ p.meta() }}</div>
+    </div>
+    {% if p.status == 'handed_off' %}
+      <span class="badge badge--dev">Predat la Dev</span>
+    {% elif p.status == 'draft' %}
+      <span class="badge badge--draft">Ciornă</span>
+      <a class="btn btn--primary btn--sm" href="/proiect/{{ p.id }}">Reia proiectul</a>
+    {% elif p.status == 'done' %}
+      <span class="badge badge--done">Finalizat</span>
+    {% else %}
+      <span class="badge badge--work">Se generează</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty">Niciun proiect încă. Pornește unul din „＋ Proiect nou".</div>
+{% endif %}

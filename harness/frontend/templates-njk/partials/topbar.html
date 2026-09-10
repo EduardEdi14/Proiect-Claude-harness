@@ -1,0 +1,22 @@
+{# Bara de sus: cautare HTMX + utilizator. Variabile: user. #}
+<header class="topbar">
+  <input class="search" type="search" name="q" placeholder="Caută un proiect…"
+         hx-get="/proiecte/cauta"
+         hx-trigger="keyup changed delay:300ms, search"
+         hx-target="#project-list"
+         hx-swap="innerHTML"
+         aria-label="Caută un proiect">
+  <div class="user">
+    <span class="avatar">{{ user.initials() }}</span>
+    <span class="user-name">{{ user.name }}</span>
+    <form method="post" action="/logout">
+      <button class="logout-btn" type="submit" title="Deconectare" aria-label="Deconectare">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.5 14H3.5C2.94772 14 2.5 13.5523 2.5 13V3C2.5 2.44772 2.94772 2 3.5 2H6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10.5 11.5L14 8L10.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+</header>

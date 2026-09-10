@@ -1,0 +1,33 @@
+version: "3.9"
+# docker-compose.node.yml — serverul Node.js al Libra Maker.
+# Pornire: docker compose -f docker-compose.node.yml up
+# (Diferit de containerul Go existent pentru a nu intra in conflict.)
+
+services:
+  web:
+    build:
+      context: .                        # context = harness/
+      dockerfile: backend/node/Dockerfile
+    image: libra-maker-node:latest
+    ports:
+      - "3000:8080"                     # local:3000 -> container:8080
+    environment:
+      PORT: "8080"
+      NODE_ENV: "development"
+      SESSION_SECRET: "libra-maker-secret-schimba-in-productie"
+      BUILD_DELAY_MS: "2500"
+    volumes:
+      # Hot-reload template-uri si static in development:
+      - ./frontend/templates-njk:/app/frontend/templates-njk:ro
+      - ./frontend/static:/app/frontend/static:ro
+      # Workspace-urile generate:
+      - libra_workspaces:/app/workspaces
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/',r=>process.exit(r.statusCode<500?0:1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  libra_workspaces:

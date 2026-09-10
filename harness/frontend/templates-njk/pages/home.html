@@ -1,0 +1,50 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+{# Ecranul 02 — Acasa. #}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <div class="main">
+    {% include "partials/topbar.html" %}
+    <div class="content">
+      <div class="content-inner">
+
+        <div class="page-head">
+          <div>
+            <h1 class="title">Ce construim azi, {{ user.firstName() }}?</h1>
+            <div class="subtitle">{{ stats.recentPhrase }}</div>
+          </div>
+          <a class="btn btn--primary" href="/proiect-nou">Start proiect nou</a>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-num">{{ stats.total }}</div>
+            <div class="stat-label">proiecte</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num stat-num--red">{{ stats.drafts }}</div>
+            <div class="stat-label">ciornă</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">{{ stats.handedOff }}</div>
+            <div class="stat-label">la echipa Dev</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">{{ stats.avgTime }}</div>
+            <div class="stat-label">timp mediu</div>
+          </div>
+        </div>
+
+        <div class="panel panel--grow">
+          <div class="panel-head">
+            <span class="panel-title">Proiecte recente</span>
+            <a class="panel-link" href="/proiectele-mele">Vezi toate</a>
+          </div>
+          <div id="project-list">{% include "partials/project-list.html" %}</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

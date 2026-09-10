@@ -1,0 +1,140 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+{# Ecranul 04 — Agent Builder (chat ghidat). #}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <div class="main">
+    <div class="content content--ab">
+      <div class="ab-wrap"
+           data-initials="{{ user.initials() }}"
+           data-skill="{{ tool.id }}">
+
+        {# Header #}
+        <div class="ab-header">
+          <div class="ab-brand">
+            <div class="brand-chip brand-chip--lg">{% include "partials/mark.html" %}</div>
+            <h1 class="ab-title">Construiești <span class="ab-title-dim">pagina ta</span></h1>
+          </div>
+          <a class="btn btn--ghost btn--sm" href="/acasa">Înapoi →</a>
+        </div>
+
+        {# Zona de chat — ascunsa la start, apare dupa primul mesaj #}
+        <div class="ab-chat" id="ab-chat" hidden>
+          <div id="chat-messages" class="ab-messages"></div>
+        </div>
+
+        {# Bara de input proeminenta #}
+        <div class="ab-input-wrap">
+          <div class="ab-bar" id="ab-bar">
+            <span class="ab-plus" aria-hidden="true">＋</span>
+            <textarea
+              id="chat-input"
+              class="ab-textarea"
+              rows="1"
+              placeholder="Descrie pagina pe care o vrei..."
+              maxlength="2000"
+              aria-label="Mesaj pentru Libra Maker"></textarea>
+            <button id="chat-send" class="ab-send" type="button" aria-label="Trimite" disabled>
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                <path d="M13 7.5L2 2l2 5.5L2 13l11-5.5z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+          <p class="ab-hint">Enter trimite &middot; Shift+Enter rând nou</p>
+        </div>
+
+        {# Tab-uri + grid de carduri (dispar dupa primul mesaj) #}
+        <div id="ab-browse">
+
+          <div class="ab-tabs" role="tablist">
+            <button class="ab-tab is-active" type="button" role="tab"
+              data-tab="templates" aria-selected="true">Șabloane</button>
+            <button class="ab-tab" type="button" role="tab"
+              data-tab="projects" aria-selected="false">Proiectele mele</button>
+          </div>
+
+          {# Panoul Sabloane #}
+          <div class="ab-panel" id="ab-panel-templates" role="tabpanel">
+            <div class="ab-grid">
+
+              <button class="ab-card" type="button"
+                data-tpl="O pagină pentru campania internă Green Week: introducere despre programul de colectare selectivă, lista punctelor de reciclare din sediu și un formular de înscriere cu nume, departament, e-mail și ziua preferată de participare.">
+                <div class="ab-card-icon">🌱</div>
+                <div class="ab-card-body">
+                  <div class="ab-card-name">Campanie Green Week</div>
+                  <div class="ab-card-desc">Pagină informativă cu formular de înscriere pentru campania de colectare selectivă...</div>
+                </div>
+              </button>
+
+              <button class="ab-card" type="button"
+                data-tpl="Formular de înscriere pentru evenimentul Team Building 2025: câmpuri pentru nume, departament, număr de telefon și preferință meniu (vegetarian sau standard).">
+                <div class="ab-card-icon">📋</div>
+                <div class="ab-card-body">
+                  <div class="ab-card-name">Formular eveniment</div>
+                  <div class="ab-card-desc">Colectare date participanți pentru team building sau alt eveniment intern...</div>
+                </div>
+              </button>
+
+              <button class="ab-card" type="button"
+                data-tpl="Anunț intern despre modificările politicii de concediu din 2025: regulile noi, un FAQ cu cele mai frecvente întrebări și un buton de confirmare că angajatul a luat la cunoștință.">
+                <div class="ab-card-icon">📢</div>
+                <div class="ab-card-body">
+                  <div class="ab-card-name">Anunț intern</div>
+                  <div class="ab-card-desc">Comunicare politici, proceduri sau schimbări organizaționale cu buton de confirmare...</div>
+                </div>
+              </button>
+
+              <button class="ab-card" type="button"
+                data-tpl="Pagină de prezentare a departamentului de Inovație și Digitalizare: misiune, membrii echipei, proiecte în desfășurare și un formular de contact pentru colaborări interne.">
+                <div class="ab-card-icon">🏛️</div>
+                <div class="ab-card-body">
+                  <div class="ab-card-name">Prezentare departament</div>
+                  <div class="ab-card-desc">Profil de departament cu echipă, misiune și proiecte active, pentru intranet...</div>
+                </div>
+              </button>
+
+              <button class="ab-card" type="button"
+                data-tpl="Pagină FAQ pentru angajații noi: cum funcționează accesul la sisteme, cine contactezi pentru IT, HR și Facilities, și un ghid rapid despre beneficii și proceduri.">
+                <div class="ab-card-icon">❓</div>
+                <div class="ab-card-body">
+                  <div class="ab-card-name">FAQ angajați noi</div>
+                  <div class="ab-card-desc">Ghid onboarding cu răspunsuri la cele mai frecvente întrebări ale colegilor noi...</div>
+                </div>
+              </button>
+
+              <button class="ab-card" type="button"
+                data-tpl="Regulament concurs intern pentru angajați: condiții de participare, premii, perioadă de desfășurare și formular de înscriere cu acceptul termenilor și condițiilor.">
+                <div class="ab-card-icon">🏆</div>
+                <div class="ab-card-body">
+                  <div class="ab-card-name">Concurs intern</div>
+                  <div class="ab-card-desc">Regulament și formular de participare la concursuri sau provocări interne...</div>
+                </div>
+              </button>
+
+            </div>
+          </div>
+
+          {# Panoul Proiectele mele #}
+          <div class="ab-panel" id="ab-panel-projects" hidden role="tabpanel">
+            <div class="ab-empty">
+              <div class="ab-empty-icon">📁</div>
+              <div class="ab-empty-text">Proiectele tale salvate apar aici.</div>
+              <a class="btn btn--ghost btn--sm" href="/proiectele-mele">Vezi toate proiectele</a>
+            </div>
+          </div>
+
+        </div>{# /ab-browse #}
+
+        {# Formular ascuns — completat prin chat, trimis la final #}
+        <form id="chat-form" action="/proiect-nou/detalii" method="POST" style="display:none">
+          <input type="hidden" name="skill_id" id="form-skill" value="{{ tool.id }}">
+          {% if projectID %}<input type="hidden" name="project_id" value="{{ projectID }}">{% endif %}
+          <input type="hidden" name="name" id="form-name">
+          <input type="hidden" name="description" id="form-desc">
+        </form>
+
+      </div>{# /ab-wrap #}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+{# Ecranul de creare cont — acelasi look ca login-ul, ca sa fie recunoscut instant. #}
+<main class="auth">
+  <section class="auth-panel">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+
+    <div class="auth-brand">
+      <span class="brand-chip brand-chip--lg">{% include "partials/mark.html" %}</span>
+      <span class="auth-brand-name">Libra Maker</span>
+    </div>
+
+    <div class="auth-copy">
+      <h1 class="auth-headline">Pagini interne,<br>fără o linie de cod.</h1>
+      <p class="auth-lede">Descrii ce ai nevoie, noi construim pagina, iar echipa de dezvoltare o revizuiește înainte de publicare.</p>
+    </div>
+
+    <div class="auth-facts">
+      <span>Sesiuni izolate</span><span>Fără date expuse</span><span>Revizuit de Dev</span>
+    </div>
+  </section>
+
+  <section class="auth-form-col">
+    <form class="auth-form" method="post" action="/auth/register" novalidate>
+
+      <div>
+        <div class="auth-title">Creează-ți contul</div>
+        <div class="auth-sub">Durează un minut. Ai nevoie doar de emailul de companie.</div>
+      </div>
+
+      {% if error %}
+      <div class="auth-error" role="alert">{{ error }}</div>
+      {% endif %}
+
+      <div class="auth-field">
+        <label class="auth-label" for="name">Nume complet</label>
+        <input class="auth-input" type="text" id="name" name="name"
+               value="{{ nameValue or '' }}"
+               placeholder="Ana Popescu"
+               autocomplete="name"
+               required>
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label" for="department">Departament</label>
+        <input class="auth-input" type="text" id="department" name="department"
+               value="{{ departmentValue or '' }}"
+               placeholder="ex. Administrativ (opțional)"
+               autocomplete="organization-title">
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label" for="email">Email</label>
+        <input class="auth-input" type="email" id="email" name="email"
+               value="{{ emailValue or '' }}"
+               placeholder="ana.popescu@libra.ro"
+               autocomplete="email"
+               required>
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label" for="password">Parolă</label>
+        <input class="auth-input" type="password" id="password" name="password"
+               placeholder="cel puțin 8 caractere"
+               autocomplete="new-password"
+               minlength="8"
+               required>
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label" for="password2">Confirmă parola</label>
+        <input class="auth-input" type="password" id="password2" name="password2"
+               autocomplete="new-password"
+               minlength="8"
+               required>
+      </div>
+
+      <button class="btn btn--primary btn--block" type="submit">Creează cont</button>
+
+      <div class="auth-divider"><span class="rule"></span><span>Libra Bank intranet</span><span class="rule"></span></div>
+      <p class="auth-note">Ai deja cont? <a href="/login" style="text-decoration:underline">Autentifică-te</a>.</p>
+    </form>
+  </section>
+</main>
+{% endblock %}

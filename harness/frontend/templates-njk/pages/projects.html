@@ -1,0 +1,27 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+{# Proiectele mele — aceeasi lista ca pe Acasa, fara limita de randuri. #}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <div class="main">
+    {% include "partials/topbar.html" %}
+    <div class="content">
+      <div class="content-inner">
+
+        <div class="page-head">
+          <div>
+            <h1 class="title">Proiectele mele</h1>
+            <div class="subtitle">Ciornele pot fi reluate; ce a plecat la Dev rămâne în jurnal.</div>
+          </div>
+          <a class="btn btn--primary" href="/proiect-nou">Start proiect nou</a>
+        </div>
+
+        <div class="panel panel--grow">
+          <div id="project-list">{% include "partials/project-list.html" %}</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

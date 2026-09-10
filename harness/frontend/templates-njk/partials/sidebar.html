@@ -1,0 +1,29 @@
+{# Meniu lateral. Variabile din context: nav, sidebarFoot, user. #}
+<aside class="sidebar">
+  <a class="brand" href="/acasa">
+    <span class="brand-chip">{% include "partials/mark.html" %}</span>
+    <span class="brand-name">Libra Maker</span>
+  </a>
+
+  <nav class="nav">
+    <a class="nav-item{% if nav == 'acasa' %} is-active{% endif %}" href="/acasa">Acasă</a>
+    <a class="nav-item{% if nav == 'proiectele-mele' %} is-active{% endif %}" href="/proiectele-mele">Proiectele mele</a>
+    <a class="nav-cta" href="/proiect-nou"><span class="plus">＋</span>Proiect nou</a>
+    <a class="nav-item{% if nav == 'ajutor' %} is-active{% endif %}" href="/ajutor">Ajutor</a>
+  </nav>
+
+  <div class="side-foot">
+    {% if sidebarFoot == 'promo' %}
+    <div class="side-card">
+      <div class="side-card-title">Ai o idee de pagină?</div>
+      <div class="side-card-text">Durează sub un minut să o pornești.</div>
+      <a class="side-card-btn" href="/proiect-nou">Start proiect nou</a>
+    </div>
+    {% elif sidebarFoot == 'restricted' %}
+    <div class="side-badge">
+      <div class="side-badge-head"><span class="lock"></span><span>MOD RESTRICȚIONAT</span></div>
+      <div class="side-badge-text">Doar cele 2 instrumente aprobate. Fără acces la fișiere, rețea sau alte proiecte.</div>
+    </div>
+    {% endif %}
+  </div>
+</aside>

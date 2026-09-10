@@ -1,0 +1,69 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+{# Ecranul 06 — Handoff confirmat. #}
+<div class="focus-shell">
+  <main class="focus-main">
+    <div class="focus-inner">
+
+      <div class="result-head">
+        <div class="check-badge">✓</div>
+        <div>
+          <h1 class="title title--sm">Trimis echipei de dezvoltare</h1>
+          <div class="subtitle">Proiectul „{{ project.name }}" a intrat în coada de revizuire.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title panel-title--sm">Ce a primit echipa Dev</div>
+        <div class="kv-grid">
+          <div class="kv"><span class="kv-label">SKILL FOLOSIT</span><span class="kv-value">{{ project.skillLabel() }}</span></div>
+          <div class="kv"><span class="kv-label">SOLICITANT</span><span class="kv-value">{{ user.username }} · {{ user.department }}</span></div>
+          <div class="kv"><span class="kv-label">FIȘIERE</span><span class="kv-value">{{ project.files() }}</span></div>
+          <div class="kv"><span class="kv-label">SESIUNE</span><span class="kv-value kv-value--mono">{{ project.shortID() }} · încheiată</span></div>
+        </div>
+        <div class="inset-note">Câmpurile completate și codul generat sunt atașate cererii. Containerul a fost șters automat.</div>
+      </div>
+
+      <div class="panel panel--grow">
+        <div class="panel-title panel-title--sm">Stadiul cererii</div>
+        <div class="timeline">
+          <div class="tl-item">
+            <span class="tl-dot tl-dot--done">✓</span>
+            <div><div class="tl-title">Generat în sandbox</div><div class="tl-meta">{{ project.generatedAt() }}</div></div>
+          </div>
+          <div class="tl-item">
+            <span class="tl-dot tl-dot--done">✓</span>
+            <div><div class="tl-title">Predat echipei Dev</div><div class="tl-meta">{{ project.handedOffAt() }} · cerere #{{ project.ticketID }}</div></div>
+          </div>
+          <div class="tl-item">
+            <span class="tl-dot tl-dot--current"></span>
+            <div><div class="tl-title">În revizuire tehnică</div><div class="tl-meta">estimat: 1 zi lucrătoare</div></div>
+          </div>
+          <div class="tl-item">
+            <span class="tl-dot tl-dot--idle"></span>
+            <div><div class="tl-title tl-title--idle">Publicare pe intranet</div><div class="tl-meta tl-meta--idle">doar de către echipa Dev</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <a class="btn btn--ghost" href="/proiectele-mele">Vezi cererea #{{ project.ticketID }}</a>
+        <a class="btn btn--primary" href="/proiect-nou">Proiect nou</a>
+      </div>
+
+    </div>
+  </main>
+
+  <aside class="side-panel side-panel--rules">
+    <div class="side-panel-mark side-panel-mark--sm"><span class="lock"></span></div>
+    <div class="side-panel-title side-panel-title--sm">Fără cale de ocolire</div>
+    <div class="side-rules">
+      <div class="side-rule">Nu există buton de publicare pentru utilizatorul de business — singura ieșire din Libra Maker este cererea către Dev.</div>
+      <div class="side-sep"></div>
+      <div class="side-rule">Nu există mod „avansat", terminal sau prompt liber. Cele două skill-uri sunt tot ce se poate rula.</div>
+      <div class="side-sep"></div>
+      <div class="side-rule">Fiecare sesiune rămâne în jurnal: cine, ce skill, ce câmpuri, ce cod.</div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

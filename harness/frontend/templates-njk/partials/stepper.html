@@ -1,0 +1,8 @@
+{# Pasii fluxului. Variabila: stepperStep (1, 2 sau 3). #}
+<div class="stepper">
+  <span class="step{% if stepperStep == 1 %} is-active{% endif %}"><span class="step-num">1</span>Instrument</span>
+  <span class="step-sep"></span>
+  <span class="step{% if stepperStep == 2 %} is-active{% endif %}"><span class="step-num">2</span>Detalii ghidate</span>
+  <span class="step-sep"></span>
+  <span class="step{% if stepperStep == 3 %} is-active{% endif %}"><span class="step-num">3</span>Handoff</span>
+</div>

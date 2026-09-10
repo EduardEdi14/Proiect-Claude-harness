@@ -1,0 +1,29 @@
+{% extends "layouts/base.html" %}
+{% block body %}
+{# Stare de tranzitie: sesiunea e in coada / ruleaza in container.
+   Pagina se auto-reimprospateaza prin HTMX pana cand sesiunea e gata. #}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <div class="main">
+    <div class="content content--wizard">
+      <div class="content-inner">
+
+        {% set stepperStep = 2 %}
+        {% include "partials/stepper.html" %}
+
+        <div class="generating"
+             hx-get="/proiect/{{ project.id }}/status"
+             hx-trigger="every 1500ms"
+             hx-swap="none">
+          <div class="gen-mark">{% include "partials/mark.html" %}</div>
+          <h1 class="title title--sm">Construim pagina „{{ project.name }}"</h1>
+          <div class="subtitle">Durează în jur de un minut. Poți lăsa fila deschisă.</div>
+          <div class="gen-bar"><span></span></div>
+          <div class="note">Rulăm într-un container izolat, doar pentru proiectul tău.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

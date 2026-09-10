@@ -137,6 +137,13 @@ a{color:var(--red-dark);text-decoration:none}
 .search::placeholder{color:var(--muted-3)}
 .search:focus{outline:2px solid rgba(194,24,47,.25);outline-offset:1px}
 .user{display:flex;align-items:center;gap:10px;margin-left:auto}
+.logout-btn{
+  width:32px;height:32px;flex:none;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;border:1.5px solid var(--line-strong);color:var(--muted-2);
+  cursor:pointer;transition:border-color .15s ease,color .15s ease,background .15s ease;
+}
+.logout-btn:hover{border-color:rgba(194,24,47,.45);color:var(--red-dark);background:var(--tint)}
 .avatar{
   width:30px;height:30px;border-radius:10px;background:var(--tint);color:var(--red);
   font:700 11.5px var(--font);display:flex;align-items:center;justify-content:center;
@@ -590,3 +597,22 @@ a{color:var(--red-dark);text-decoration:none}
   .chat-messages{padding:14px 16px}
   .chat-templates{padding:12px 16px 16px}
 }
+
+/* ── Login cu email + parola (Node.js backend) ──────────────────────── */
+.auth-field{display:flex;flex-direction:column;gap:6px}
+.auth-label{font-size:13px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+.auth-input{
+  height:44px;padding:0 14px;border-radius:10px;
+  border:1.5px solid #E0DDD9;background:#fff;
+  font:500 15px/1 'Plus Jakarta Sans',sans-serif;color:var(--ink);
+  outline:none;transition:border-color .15s;
+}
+.auth-input::placeholder{color:#B0ABA5}
+.auth-input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(194,24,47,.10)}
+.auth-error{
+  padding:10px 14px;border-radius:10px;
+  background:#FEF2F2;border:1px solid #FECACA;
+  font-size:13px;font-weight:500;color:#B91C1C;
+}
+.auth-form{gap:18px}
+.auth-form .btn--block{margin-top:4px}
