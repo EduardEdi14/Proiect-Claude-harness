@@ -1,13 +1,14 @@
 version: "3.9"
 # docker-compose.node.yml — serverul Node.js al Libra Maker.
-# Folosit de TOTI colegii.
+# Folosit de TOTI colegii. Configureaza DATABASE_URL in fisierul .env din acelasi director.
 #
-# Pornire colegi (se conecteaza la baza de date de pe laptopul lui Ioana):
-#   docker compose -f docker-compose.node.yml up -d
+# Ioana (serverul cu baza de date):
+#   DATABASE_URL=postgresql://libramaker:libramaker2025@harness-db-1:5432/libramaker
 #
-# Pornire Ioana (ruleaza si baza de date):
-#   docker compose -f docker-compose.node.db.yml up -d
-#   docker compose -f docker-compose.node.yml up -d
+# Colegi (se conecteaza la baza lui Ioana):
+#   DATABASE_URL=postgresql://libramaker:libramaker2025@192.168.149.147:5432/libramaker
+#
+# Pornire: docker compose -f docker-compose.node.yml up -d
 
 services:
   web:
@@ -17,14 +18,8 @@ services:
     image: libra-maker-node:latest
     ports:
       - "3000:8080"
-    environment:
-      PORT: "8080"
-      NODE_ENV: "development"
-      SESSION_SECRET: "libra-maker-secret-schimba-in-productie"
-      BUILD_DELAY_MS: "2500"
-      # Pe laptopul lui Ioana: host.docker.internal (adresa hostului din container)
-      # Pe laptopul colegilor: inlocuieste cu IP-ul lui Ioana (192.168.149.147)
-      DATABASE_URL: "postgresql://libramaker:libramaker2025@harness-db-1:5432/libramaker"
+    env_file:
+      - backend/node/.env
     volumes:
       - ./frontend/templates-njk:/frontend/templates-njk:ro
       - ./frontend/static:/frontend/static:ro
