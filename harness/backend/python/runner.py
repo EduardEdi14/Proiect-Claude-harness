@@ -26,10 +26,13 @@ import time
 # Prefixele skill-urilor pentru promptul catre claude -p
 # Corespund cu tabelul din sectiunea 7 a documentului de implementare.
 SKILL_PREFIXES = {
-    "pagina-informare": "/pagina-simpla",
-    "formular":         "/formular",
-    "harta":            "/harta",
-    "calendar":         "/calendar",
+    "dashboard":  "/dashboard",
+    "chart":      "/chart",
+    "report":     "/report",
+    "data-table": "/data-table",
+    "info-page":  "/info-page",
+    "form-page":  "/form-page",
+    "slides":     "/slides",
 }
 
 

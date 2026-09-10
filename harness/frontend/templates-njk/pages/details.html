@@ -53,64 +53,20 @@
               data-tab="projects" aria-selected="false">Proiectele mele</button>
           </div>
 
-          {# Panoul Sabloane #}
+          {# Panoul Sabloane — generat din lista TOOLS din store.js #}
           <div class="ab-panel" id="ab-panel-templates" role="tabpanel">
             <div class="ab-grid">
-
-              <button class="ab-card" type="button"
-                data-tpl="O pagină pentru campania internă Green Week: introducere despre programul de colectare selectivă, lista punctelor de reciclare din sediu și un formular de înscriere cu nume, departament, e-mail și ziua preferată de participare.">
-                <div class="ab-card-icon">🌱</div>
+              {% for t in tools %}
+              <button class="ab-card{% if t.id == tool.id %} is-selected{% endif %}" type="button"
+                data-skill="{{ t.id }}"
+                data-tpl="{{ t.examplePrompt }}">
+                <div class="ab-card-icon">{{ t.icon }}</div>
                 <div class="ab-card-body">
-                  <div class="ab-card-name">Campanie Green Week</div>
-                  <div class="ab-card-desc">Pagină informativă cu formular de înscriere pentru campania de colectare selectivă...</div>
+                  <div class="ab-card-name">{{ t.name }}</div>
+                  <div class="ab-card-desc">{{ t.desc }}</div>
                 </div>
               </button>
-
-              <button class="ab-card" type="button"
-                data-tpl="Formular de înscriere pentru evenimentul Team Building 2025: câmpuri pentru nume, departament, număr de telefon și preferință meniu (vegetarian sau standard).">
-                <div class="ab-card-icon">📋</div>
-                <div class="ab-card-body">
-                  <div class="ab-card-name">Formular eveniment</div>
-                  <div class="ab-card-desc">Colectare date participanți pentru team building sau alt eveniment intern...</div>
-                </div>
-              </button>
-
-              <button class="ab-card" type="button"
-                data-tpl="Anunț intern despre modificările politicii de concediu din 2025: regulile noi, un FAQ cu cele mai frecvente întrebări și un buton de confirmare că angajatul a luat la cunoștință.">
-                <div class="ab-card-icon">📢</div>
-                <div class="ab-card-body">
-                  <div class="ab-card-name">Anunț intern</div>
-                  <div class="ab-card-desc">Comunicare politici, proceduri sau schimbări organizaționale cu buton de confirmare...</div>
-                </div>
-              </button>
-
-              <button class="ab-card" type="button"
-                data-tpl="Pagină de prezentare a departamentului de Inovație și Digitalizare: misiune, membrii echipei, proiecte în desfășurare și un formular de contact pentru colaborări interne.">
-                <div class="ab-card-icon">🏛️</div>
-                <div class="ab-card-body">
-                  <div class="ab-card-name">Prezentare departament</div>
-                  <div class="ab-card-desc">Profil de departament cu echipă, misiune și proiecte active, pentru intranet...</div>
-                </div>
-              </button>
-
-              <button class="ab-card" type="button"
-                data-tpl="Pagină FAQ pentru angajații noi: cum funcționează accesul la sisteme, cine contactezi pentru IT, HR și Facilities, și un ghid rapid despre beneficii și proceduri.">
-                <div class="ab-card-icon">❓</div>
-                <div class="ab-card-body">
-                  <div class="ab-card-name">FAQ angajați noi</div>
-                  <div class="ab-card-desc">Ghid onboarding cu răspunsuri la cele mai frecvente întrebări ale colegilor noi...</div>
-                </div>
-              </button>
-
-              <button class="ab-card" type="button"
-                data-tpl="Regulament concurs intern pentru angajați: condiții de participare, premii, perioadă de desfășurare și formular de înscriere cu acceptul termenilor și condițiilor.">
-                <div class="ab-card-icon">🏆</div>
-                <div class="ab-card-body">
-                  <div class="ab-card-name">Concurs intern</div>
-                  <div class="ab-card-desc">Regulament și formular de participare la concursuri sau provocări interne...</div>
-                </div>
-              </button>
-
+              {% endfor %}
             </div>
           </div>
 

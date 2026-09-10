@@ -16,17 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 && \
 
 WORKDIR /app
 
-<<<<<<< HEAD
-# Copy only package.json first; use `npm install` (not `npm ci`) so that a
-# missing or stale package-lock.json is automatically resolved inside the
-# image layer — no need to keep the lock file in sync locally.
+# Copy only package.json; use `npm install` (not `npm ci`) so that a
+# missing or stale package-lock.json is resolved inside the image layer.
 COPY backend/node/package.json ./backend/node/
 RUN cd backend/node && npm install --omit=dev
-=======
-# Copiem mai intai package.json pentru cache layer
-COPY backend/node/package.json backend/node/package-lock.json* ./node/
-RUN cd node && npm install --only=production
->>>>>>> 7e11c9ed95b7b496020f9f7214d12ea4e2a34e3a
 
 # Codul Node.js si Python
 COPY backend/node/   ./backend/node/
