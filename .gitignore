@@ -1,0 +1,13 @@
+# Secrete de mediu.
+# .env contine parole si adrese interne; fiecare coleg si-l face local,
+# copiind backend/node/.env.example. Sablonul ramane in repo.
+.env
+.env.local
+.env.*.local
+
+# Dependinte instalate; se refac cu `npm install` din package.json.
+node_modules/
+npm-debug.log*
+
+# Iesiri de rulare
+*.log

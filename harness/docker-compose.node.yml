@@ -1,12 +1,11 @@
 version: "3.9"
 # docker-compose.node.yml — serverul Node.js al Libra Maker.
-# Folosit de TOTI colegii. Configureaza DATABASE_URL in fisierul .env din acelasi director.
+# Folosit de TOTI colegii.
 #
-# Ioana (serverul cu baza de date):
-#   DATABASE_URL=postgresql://libramaker:libramaker2025@harness-db-1:5432/libramaker
-#
-# Colegi (se conecteaza la baza lui Ioana):
-#   DATABASE_URL=postgresql://libramaker:libramaker2025@192.168.149.147:5432/libramaker
+# Inainte de prima pornire, fa-ti fisierul de configurare:
+#   cp backend/node/.env.example backend/node/.env
+# si completeaza DATABASE_URL cu datele primite de la colegi.
+# .env nu se versioneaza — contine parole si adrese interne.
 #
 # Pornire: docker compose -f docker-compose.node.yml up -d
 
@@ -18,11 +17,25 @@ services:
     image: libra-maker-node:latest
     ports:
       - "3000:8080"
+    # Valorile nesecrete au implicite aici; .env le poate suprascrie si e
+    # singurul loc cu DATABASE_URL. `required: false` lasa stiva sa porneasca
+    # si inainte ca cineva sa-si fi facut .env-ul.
+    environment:
+      PORT: "8080"
+      NODE_ENV: "development"
+      BUILD_DELAY_MS: "2500"
+      # Postgres-ul local din docker-compose.node.db.yml nu are TLS;
+      # fara asta conexiunea esueaza cu "server does not support SSL".
+      DATABASE_SSL: "false"
     env_file:
-      - backend/node/.env
+      - path: backend/node/.env
+        required: false
     volumes:
-      - ./frontend/templates-njk:/frontend/templates-njk:ro
-      - ./frontend/static:/frontend/static:ro
+      # Caile din imagine repeta structura repo-ului (/app = harness/), deci
+      # montarile trebuie sa tinteasca /app/frontend, nu /frontend — altfel
+      # containerul foloseste copia din imagine si editarile nu se vad.
+      - ./frontend/templates-njk:/app/frontend/templates-njk:ro
+      - ./frontend/static:/app/frontend/static:ro
       - libra_workspaces:/app/workspaces
     restart: unless-stopped
 
