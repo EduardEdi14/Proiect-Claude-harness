@@ -76,11 +76,21 @@
     });
   });
 
-  // -- Carduri sablon: click pre-completeaza textarea ----------------
+  // -- Carduri sablon: click pre-completeaza textarea si seteaza skill-ul --------
+  var fSkill = document.getElementById("form-skill");
   var cards = document.querySelectorAll(".ab-card");
   Array.prototype.forEach.call(cards, function (card) {
     card.addEventListener("click", function () {
       input.value = card.getAttribute("data-tpl") || "";
+      if (fSkill) fSkill.value = card.getAttribute("data-skill") || "";
+      // Actualizeaza data-skill pe containerul ab-wrap (folosit de logica de chat)
+      var wrap2 = document.querySelector(".ab-wrap");
+      if (wrap2 && card.getAttribute("data-skill")) {
+        wrap2.setAttribute("data-skill", card.getAttribute("data-skill"));
+      }
+      // Marcheaza cardul selectat vizual
+      Array.prototype.forEach.call(cards, function (c) { c.classList.remove("is-selected"); });
+      card.classList.add("is-selected");
       resize(input);
       syncSend();
       input.focus();

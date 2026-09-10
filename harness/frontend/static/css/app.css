@@ -520,6 +520,7 @@ a{color:var(--link);text-decoration:none}
 
 /* ── Zona de chat (mesaje, apare dupa primul send) ───────────────────── */
 .ab-chat{display:flex;flex-direction:column;gap:0}
+.ab-chat[hidden]{display:none}
 .ab-messages{
   display:flex;flex-direction:column;gap:14px;
   padding:20px 24px;
@@ -631,6 +632,11 @@ a{color:var(--link);text-decoration:none}
   box-shadow:0 4px 16px rgba(194,24,47,.1);
 }
 .ab-card:active{transform:scale(.99)}
+.ab-card.is-selected{
+  border-color:var(--brand);
+  background:rgba(194,24,47,.06);
+  box-shadow:0 0 0 2px rgba(194,24,47,.18);
+}
 .ab-card-icon{
   font-size:22px;line-height:1;flex:none;
   width:40px;height:40px;border-radius:12px;

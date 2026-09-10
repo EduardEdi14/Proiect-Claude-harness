@@ -2,9 +2,8 @@
 // server.js — Serverul Express al Libra Maker.
 // Stack: Node.js 20 + Express 4 + Nunjucks + express-session + bcryptjs.
 //
-// Store selection (automatic at startup):
-//   DATABASE_URL set + reachable → PgStore  (PostgreSQL, persistent)
-//   otherwise                    → Store    (in-memory, demo data)
+// Store: Store din store.js (PostgreSQL). DATABASE_URL trebuie sa fie setat
+// in .env inainte de pornire; serverul iese daca baza de date nu e accesibila.
 
 const path    = require('path');
 const express = require('express');
@@ -13,8 +12,7 @@ const bcrypt  = require('bcryptjs');
 const nunjucks = require('nunjucks');
 
 const { STATUS, TOOLS, toolByID, Store } = require('./store');
-const { PgStore }                         = require('./store-pg');
-const db                                  = require('./db');
+const { MemoryStore }                     = require('./store-memory');
 
 // ---------- app ----------
 
@@ -54,8 +52,7 @@ function hxRedirect(req, res, url) {
 }
 
 /**
- * Auth middleware — works with both the sync in-memory store and the
- * async PgStore, because `await syncValue` is safe in JS.
+ * Auth middleware — await-safe pentru Store async (PostgreSQL).
  */
 function auth(handler) {
   return async (req, res, next) => {
@@ -177,6 +174,7 @@ app.get('/proiectele-mele', auth(async (req, res) => {
   });
 }));
 
+// GET /proiecte/cauta — fragment HTMX pentru bara de cautare
 app.get('/proiecte/cauta', auth(async (req, res) => {
   const found = await store.search(req.user.id, req.query.q || '');
   return res.render('partials/project-list.html', { projects: found });
@@ -211,11 +209,12 @@ app.get('/proiect-nou/detalii', auth((req, res) => {
     sidebarFoot: 'restricted',
     user:        req.user,
     tool,
+    tools:       TOOLS,
     skillPreset,
+    preset,
     projectID:   '',
     name:        '',
     description: '',
-    preset,
     error:       '',
   });
 }));
@@ -267,7 +266,9 @@ app.get('/proiect/:id/detalii', auth(async (req, res) => {
     sidebarFoot: 'restricted',
     user:        req.user,
     tool,
+    tools:       TOOLS,
     skillPreset: true,
+    preset:      '',
     projectID:   p.id,
     name:        p.name,
     description: p.description,
@@ -342,36 +343,38 @@ app.use((err, req, res, next) => {
   res.status(500).send('Eroare internă de server. Verificați logurile.');
 });
 
-// ---------- startup: pick store, then listen ----------
+// ---------- startup ----------
 
-let store; // assigned below before any request can reach the routes
+let store;
 
 async function start() {
   const PORT = parseInt(process.env.PORT || '8080', 10);
 
   if (process.env.DATABASE_URL) {
     try {
-      await db.ping();
-      store = new PgStore();
-      console.log('[store] PostgreSQL conectat ✓');
-    } catch (err) {
-      console.warn(`[store] PostgreSQL indisponibil (${err.message}) — folosesc store-ul în memorie.`);
       store = new Store();
+      await store.init();
+      console.log('[store] PostgreSQL conectat, tabele verificate ✓');
+    } catch (err) {
+      console.warn(`[store] PostgreSQL indisponibil (${err.message}) — pornesc cu store in memorie (date demo).`);
+      store = new MemoryStore();
+      await store.init();
     }
   } else {
-    console.log('[store] DATABASE_URL lipseste — store în memorie (date demo).');
-    store = new Store();
+    console.log('[store] DATABASE_URL lipseste — store in memorie (date demo).');
+    store = new MemoryStore();
+    await store.init();
   }
 
   app.listen(PORT, () => {
     console.log(`Libra Maker (Node.js) pornit pe http://localhost:${PORT}`);
-    if (store instanceof Store) {
+    if (store instanceof MemoryStore) {
       console.log('Utilizator demo: ana.popescu@libra.ro / libra2025');
     }
   });
 }
 
 start().catch(err => {
-  console.error('Pornire esuata:', err);
+  console.error('Pornire esuata:', err.message);
   process.exit(1);
 });
