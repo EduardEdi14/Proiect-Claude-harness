@@ -1,0 +1,117 @@
+/* Libra Maker - base stylesheet for generated pages.
+   Copy this file as `style.css` and append only what is specific to the page below it.
+   No dependencies: no external fonts, no framework, no CDN. */
+
+:root{
+  --red:#C2182F; --red-dark:#8E1226; --coral:#E0503F; --ochre:#E8A33C;
+  --ink:#1C1B21;
+  --muted:rgba(28,27,33,.55); --muted-2:rgba(28,27,33,.42);
+  --bg:#F7F4F2; --surface:#fff; --surface-2:#FAF8F7; --neutral:#F4F1EF;
+  --line:rgba(28,27,33,.07); --line-strong:rgba(28,27,33,.14);
+  --pos:#2F6F5E; --neg:#C2182F;
+  --s1:#C2182F; --s2:#2F6F5E; --s3:#E8A33C; --s4:#3F5C9A; --s5:#7A4A6E; --s6:#6E7A3F;
+  --shadow:0 10px 28px rgba(28,27,33,.06);
+  --radius:16px;
+  --font:"Plus Jakarta Sans",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;padding:32px 24px 56px;background:var(--bg);color:var(--ink);
+  font:400 14px/1.6 var(--font);-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto}
+a{color:var(--red-dark)}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:4px}
+
+/* ---------- header ---------- */
+.head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+h1{margin:0;font-size:28px;font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.head p{margin:6px 0 0;color:var(--muted)}
+.period{font-size:13px;color:var(--muted);white-space:nowrap}
+
+/* ---------- cards ---------- */
+.grid{display:grid;gap:16px}
+.grid--4{grid-template-columns:repeat(4,1fr)}
+.grid--3{grid-template-columns:repeat(3,1fr)}
+.grid--2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      padding:18px 20px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 2px;font-size:18px;font-weight:700}
+.card h3{margin:0 0 12px;font-size:14px;font-weight:700}
+.card .note{margin:8px 0 0;font-size:12px;color:var(--muted)}
+.section{margin-top:28px}
+.section > h2{margin:0 0 12px;font-size:18px;font-weight:700}
+
+/* ---------- metric tiles ---------- */
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+.tile .label{font-size:12px;font-weight:600;color:var(--muted);text-transform:none}
+.tile .value{margin-top:6px;font-size:32px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .unit{font-size:15px;font-weight:600;color:var(--muted);margin-left:4px}
+.tile .delta{margin-top:8px;font-size:12.5px;font-weight:600;display:inline-flex;gap:5px;align-items:center}
+.delta--up{color:var(--pos)} .delta--down{color:var(--neg)} .delta--flat{color:var(--muted)}
+.tile .foot{margin-top:6px;font-size:12px;color:var(--muted-2)}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+caption{text-align:left;font-size:12px;color:var(--muted);padding-bottom:8px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+thead th{font-size:12px;font-weight:700;color:var(--muted);background:var(--surface-2);
+         border-bottom:1px solid var(--line-strong);position:sticky;top:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--surface-2)}
+tfoot td{font-weight:700;border-top:1px solid var(--line-strong)}
+
+/* ---------- status badges ---------- */
+.badge{display:inline-block;padding:3px 9px;border-radius:8px;font-size:11.5px;font-weight:700;
+       background:var(--neutral);color:var(--muted)}
+.badge--ok{background:#E9F2EF;color:#245646}
+.badge--warn{background:#FCF1DC;color:#8A5B12}
+.badge--alert{background:#FDE6E8;color:var(--red-dark)}
+
+/* ---------- charts ---------- */
+figure{margin:0}
+figure svg{display:block;width:100%;height:auto}
+figcaption{margin-top:10px;font-size:12px;color:var(--muted)}
+.axis{font-size:11px;fill:var(--muted)}
+.axis-line{stroke:var(--line-strong);stroke-width:1}
+.grid-line{stroke:var(--line);stroke-width:1}
+.bar{fill:var(--s1)}
+.line{fill:none;stroke:var(--s1);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* ---------- callouts, assumptions, footer ---------- */
+.callout{background:#FDF2F2;border:1px solid rgba(194,24,47,.18);border-radius:12px;
+         padding:12px 14px;font-size:13px}
+.callout strong{color:var(--red-dark)}
+.foot-note{margin-top:32px;padding-top:16px;border-top:1px solid var(--line);
+           font-size:12px;color:var(--muted-2)}
+
+/* ---------- small screens ---------- */
+@media (max-width:900px){
+  .grid--4{grid-template-columns:repeat(2,1fr)}
+  .grid--3,.grid--2{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  body{padding:20px 16px 40px}
+  h1{font-size:23px}
+  .grid--4{grid-template-columns:1fr}
+  .tile .value{font-size:27px}
+}
+
+/* ---------- print ---------- */
+@media print{
+  body{background:#fff;padding:0;font-size:11.5pt}
+  .card,.tile{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+  .section,figure,table{break-inside:avoid}
+  thead{display:table-header-group}
+  .no-print{display:none !important}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt;color:#666}
+}
+
+/* ---------- screen-reader only text ---------- */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+         clip:rect(0 0 0 0);white-space:nowrap;border:0}
