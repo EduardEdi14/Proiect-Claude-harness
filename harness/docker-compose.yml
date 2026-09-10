@@ -1,0 +1,42 @@
+# Libra Maker — Node.js server + Python runner.
+#
+# Start:  docker compose up -d       (from harness/)
+# UI:     http://localhost:8080
+# Stop:   docker compose down
+# Logs:   docker compose logs -f
+#
+# DATABASE_URL is read from the .env file in the same directory as this file
+# (harness/.env or harness/backend/node/.env via env_file below).
+# When DATABASE_URL is set the server connects to PostgreSQL.
+# When it is absent the server uses the in-memory store (demo data).
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: backend/node/Dockerfile
+    image: libra-maker-node:latest
+    container_name: libra-maker
+    ports:
+      - "8080:8080"
+    # Read .env from the node directory so DATABASE_URL and other secrets
+    # do not have to be duplicated here.
+    env_file:
+      - backend/node/.env
+    environment:
+      # These override any value from .env, giving explicit defaults.
+      PORT: "8080"
+      NODE_ENV: "development"
+    volumes:
+      - ./frontend/templates-njk:/app/frontend/templates-njk:ro
+      - ./frontend/static:/app/frontend/static:ro
+      - libra_workspaces:/workspaces
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/',r=>process.exit(r.statusCode<500?0:1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  libra_workspaces:
