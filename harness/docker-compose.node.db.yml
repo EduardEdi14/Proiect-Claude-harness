@@ -1,0 +1,26 @@
+version: "3.9"
+# docker-compose.node.db.yml — baza de date PostgreSQL comuna.
+# Rulat DOAR pe laptopul lui Ioana (serverul de baze de date).
+# Pornire: docker compose -f docker-compose.node.db.yml up -d
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:               libramaker
+      POSTGRES_USER:             libramaker
+      POSTGRES_PASSWORD:         libramaker2025
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    ports:
+      - "5432:5432"
+    volumes:
+      - libra_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U libramaker -d libramaker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  libra_pgdata:

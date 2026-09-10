@@ -1,53 +1,35 @@
 version: "3.9"
-# docker-compose.node.yml — serverul Node.js al Libra Maker cu PostgreSQL.
-# Pornire: docker compose -f docker-compose.node.yml up -d
-# (Diferit de containerul Go existent pentru a nu intra in conflict.)
+# docker-compose.node.yml — serverul Node.js al Libra Maker.
+# Folosit de TOTI colegii.
+#
+# Pornire colegi (se conecteaza la baza de date de pe laptopul lui Ioana):
+#   docker compose -f docker-compose.node.yml up -d
+#
+# Pornire Ioana (ruleaza si baza de date):
+#   docker compose -f docker-compose.node.db.yml up -d
+#   docker compose -f docker-compose.node.yml up -d
 
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB:       libramaker
-      POSTGRES_USER:     libramaker
-      POSTGRES_PASSWORD: libramaker2025
-    volumes:
-      - libra_pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U libramaker -d libramaker"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   web:
     build:
-      context: .                        # context = harness/
+      context: .
       dockerfile: backend/node/Dockerfile
     image: libra-maker-node:latest
     ports:
-      - "3000:8080"                     # local:3000 -> container:8080
+      - "3000:8080"
     environment:
       PORT: "8080"
       NODE_ENV: "development"
       SESSION_SECRET: "libra-maker-secret-schimba-in-productie"
       BUILD_DELAY_MS: "2500"
-      DATABASE_URL: "postgresql://libramaker:libramaker2025@db:5432/libramaker"
+      # Pe laptopul lui Ioana: host.docker.internal (adresa hostului din container)
+      # Pe laptopul colegilor: inlocuieste cu IP-ul lui Ioana (192.168.149.147)
+      DATABASE_URL: "postgresql://libramaker:libramaker2025@harness-db-1:5432/libramaker"
     volumes:
-      # Hot-reload template-uri si static in development:
       - ./frontend/templates-njk:/frontend/templates-njk:ro
       - ./frontend/static:/frontend/static:ro
-      # Workspace-urile generate:
       - libra_workspaces:/app/workspaces
-    depends_on:
-      db:
-        condition: service_healthy
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/',r=>process.exit(r.statusCode<500?0:1))"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
 
 volumes:
   libra_workspaces:
-  libra_pgdata:
