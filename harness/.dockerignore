@@ -1,0 +1,18 @@
+# Build context for backend/node/Dockerfile is harness/.
+# Keep out everything the image does not need (node_modules is reinstalled
+# inside the image by `npm ci`).
+.git
+.gitignore
+**/node_modules
+**/npm-debug.log
+**/.env
+mockup/
+workspaces/
+scripts/
+docker/
+backend/cmd/
+backend/internal/
+*.md
+Dockerfile
+docker-compose*.yml
+.dockerignore
