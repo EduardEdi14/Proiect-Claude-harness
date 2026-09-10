@@ -1,9 +1,24 @@
 version: "3.9"
-# docker-compose.node.yml — serverul Node.js al Libra Maker.
-# Pornire: docker compose -f docker-compose.node.yml up
+# docker-compose.node.yml — serverul Node.js al Libra Maker cu PostgreSQL.
+# Pornire: docker compose -f docker-compose.node.yml up -d
 # (Diferit de containerul Go existent pentru a nu intra in conflict.)
 
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       libramaker
+      POSTGRES_USER:     libramaker
+      POSTGRES_PASSWORD: libramaker2025
+    volumes:
+      - libra_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U libramaker -d libramaker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   web:
     build:
       context: .                        # context = harness/
@@ -16,12 +31,16 @@ services:
       NODE_ENV: "development"
       SESSION_SECRET: "libra-maker-secret-schimba-in-productie"
       BUILD_DELAY_MS: "2500"
+      DATABASE_URL: "postgresql://libramaker:libramaker2025@db:5432/libramaker"
     volumes:
       # Hot-reload template-uri si static in development:
-      - ./frontend/templates-njk:/app/frontend/templates-njk:ro
-      - ./frontend/static:/app/frontend/static:ro
+      - ./frontend/templates-njk:/frontend/templates-njk:ro
+      - ./frontend/static:/frontend/static:ro
       # Workspace-urile generate:
       - libra_workspaces:/app/workspaces
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/',r=>process.exit(r.statusCode<500?0:1))"]
@@ -31,3 +50,4 @@ services:
 
 volumes:
   libra_workspaces:
+  libra_pgdata:

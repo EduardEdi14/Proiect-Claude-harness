@@ -1,12 +1,12 @@
 'use strict';
-// store.js — modele de date si store in-memorie pentru Libra Maker (Node.js).
+// store.js — modele de date si store PostgreSQL pentru Libra Maker (Node.js).
 // Echivalent cu harness/backend/internal/sessions/store.go.
-// TODO(backend): inlocuieste cu Postgres (tabelele users/sessions din sectiunea 4 a documentului).
 
 const crypto = require('crypto');
 const path = require('path');
 const { spawn } = require('child_process');
 const bcrypt = require('bcryptjs');
+const { Pool } = require('pg');
 
 // ---------- constante de status ----------
 
@@ -74,7 +74,7 @@ function humanAgo(ms) {
 }
 
 const DIACRITICS_MAP = {
-  'aă':'a','aâ':'a','î':'i','sș':'s','sş':'s','tț':'t','tţ':'t',
+  'ă':'a','â':'a','î':'i','ș':'s','ş':'s','ț':'t','ţ':'t',
   'Ă':'a','Â':'a','Î':'i','Ș':'s','Ş':'s','Ț':'t','Ţ':'t',
 };
 const DIACRITICS_RE = /[ăâîșşțţĂÂÎȘŞȚŢ]/g;
@@ -190,239 +190,299 @@ class Project {
   handedOffAt() { return stamp(this.handedAt); }
 }
 
+// ---------- conversie row PostgreSQL -> obiecte ----------
+
+function rowToUser(row) {
+  return new User({
+    id:           row.id,
+    email:        row.email,
+    name:         row.name,
+    username:     row.username,
+    department:   row.department,
+    passwordHash: row.password_hash,
+  });
+}
+
+function rowToProject(row) {
+  return new Project({
+    id:            row.id,
+    userID:        row.user_id,
+    skillID:       row.skill_id,
+    name:          row.name,
+    description:   row.description,
+    workspacePath: row.workspace_path,
+    status:        row.status,
+    ticketID:      row.ticket_id,
+    durationSec:   row.duration_sec,
+    createdAt:     row.created_at,
+    updatedAt:     row.updated_at,
+    completedAt:   row.completed_at,
+    handedAt:      row.handed_at,
+  });
+}
+
 // ---------- clasa Store ----------
 
 class Store {
   constructor() {
-    this._users    = new Map(); // id -> User
-    this._projects = new Map(); // id -> Project
-    this._ticket   = 2480;
+    this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
     this.buildDelay = parseInt(process.env.BUILD_DELAY_MS || '2500', 10);
-    this._initDemo();
   }
 
-  _initDemo() {
-    const u = new User({
-      id:           newID(),
-      email:        'ana.popescu@libra.ro',
-      name:         'Ana Popescu',
-      username:     'ana.popescu',
-      department:   'Administrativ',
-      passwordHash: bcrypt.hashSync('libra2025', 10),
-    });
-    this._users.set(u.id, u);
+  async init() {
+    await this.pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id            UUID        PRIMARY KEY,
+        email         TEXT        UNIQUE NOT NULL,
+        name          TEXT        NOT NULL,
+        username      TEXT        NOT NULL DEFAULT '',
+        department    TEXT        NOT NULL DEFAULT '',
+        password_hash TEXT        NOT NULL,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS projects (
+        id             UUID        PRIMARY KEY,
+        user_id        UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        skill_id       TEXT        NOT NULL,
+        name           TEXT        NOT NULL,
+        description    TEXT        NOT NULL DEFAULT '',
+        workspace_path TEXT        NOT NULL DEFAULT '',
+        status         TEXT        NOT NULL DEFAULT 'queued',
+        ticket_id      INTEGER     NOT NULL DEFAULT 0,
+        duration_sec   INTEGER     NOT NULL DEFAULT 0,
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        completed_at   TIMESTAMPTZ,
+        handed_at      TIMESTAMPTZ
+      );
+      CREATE SEQUENCE IF NOT EXISTS ticket_seq START 2481;
+    `);
+    await this._initDemo();
+  }
+
+  async _initDemo() {
+    const existing = await this.pool.query(
+      "SELECT id FROM users WHERE email = 'ana.popescu@libra.ro'"
+    );
+    if (existing.rows.length > 0) return;
+
+    const hash = bcrypt.hashSync('libra2025', 10);
+    const uid  = newID();
+    await this.pool.query(
+      `INSERT INTO users (id, email, name, username, department, password_hash)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [uid, 'ana.popescu@libra.ro', 'Ana Popescu', 'ana.popescu', 'Administrativ', hash]
+    );
 
     const now = new Date();
     const ago = (ms) => new Date(now.getTime() - ms);
 
-    this._seed({ userID: u.id, skillID: 'formular',
+    await this._seedProject({ userID: uid, skillID: 'formular',
       name: 'Green Week — înscrieri',
-      description: 'O pagină pentru campania internă „Green Week”: o scurtă introducere despre programul de colectare selectivă, lista punctelor de reciclare din sediu şi un formular de înscriere cu nume, departament, e-mail şi ziua în care vrei să participi.',
+      description: 'O pagină pentru campania internă „Green Week": o scurtă introducere despre programul de colectare selectivă, lista punctelor de reciclare din sediu şi un formular de înscriere cu nume, departament, e-mail şi ziua în care vrei să participi.',
       status: STATUS.HANDED_OFF, durationSec: 38,
       createdAt: ago(5*86400000), updatedAt: ago(5*86400000), completedAt: ago(5*86400000), handedAt: ago(5*86400000) });
 
-    this._seed({ userID: u.id, skillID: 'formular',
+    await this._seedProject({ userID: uid, skillID: 'formular',
       name: 'Chestionar cantină',
       description: 'Un formular scurt prin care colegii spun ce meniuri vor la cantină şi în ce interval orar iau prânzul.',
       status: STATUS.DRAFT, durationSec: 46,
       createdAt: ago(40*60000), updatedAt: ago(4*60000), completedAt: ago(38*60000), handedAt: null });
 
-    this._seed({ userID: u.id, skillID: 'pagina-informare',
+    await this._seedProject({ userID: uid, skillID: 'pagina-informare',
       name: 'Ghid onboarding — echipa nouă',
       description: 'O pagină de informare pentru colegii nou veniți: primele zile, cine pe ce răspunde şi lista de acces pe care trebuie să o ceară.',
       status: STATUS.DONE, durationSec: 42,
       createdAt: ago(12*86400000), updatedAt: ago(12*86400000), completedAt: ago(12*86400000), handedAt: ago(12*86400000) });
   }
 
-  _seed(data) {
+  async _seedProject(data) {
     const id = newID();
-    const p = new Project({
-      id,
-      workspacePath: workspacePath(data.userID, id),
-      ...data,
-    });
-    if (p.status === STATUS.HANDED_OFF || p.status === STATUS.DONE) {
-      this._ticket++;
-      p.ticketID = this._ticket;
+    let ticketID = 0;
+    if (data.status === STATUS.HANDED_OFF || data.status === STATUS.DONE) {
+      const r = await this.pool.query("SELECT nextval('ticket_seq') AS t");
+      ticketID = parseInt(r.rows[0].t, 10);
     }
-    this._projects.set(id, p);
+    await this.pool.query(
+      `INSERT INTO projects
+         (id, user_id, skill_id, name, description, workspace_path,
+          status, ticket_id, duration_sec, created_at, updated_at, completed_at, handed_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [id, data.userID, data.skillID, data.name, data.description,
+       workspacePath(data.userID, id), data.status, ticketID, data.durationSec,
+       data.createdAt, data.updatedAt, data.completedAt || null, data.handedAt || null]
+    );
   }
 
   // ---------- acces utilizatori ----------
 
-  demoUser() {
-    return this._users.values().next().value || null;
+  async getUser(id) {
+    const r = await this.pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    return r.rows.length ? rowToUser(r.rows[0]) : null;
   }
 
-  getUser(id) {
-    return this._users.get(id) || null;
-  }
-
-  findUserByEmail(email) {
+  async findUserByEmail(email) {
     const e = (email || '').toLowerCase().trim();
-    for (const u of this._users.values()) {
-      if (u.email.toLowerCase() === e) return u;
-    }
-    return null;
+    const r = await this.pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [e]);
+    return r.rows.length ? rowToUser(r.rows[0]) : null;
   }
 
-  /** Creeaza un cont nou. Presupune ca emailul a fost deja validat ca fiind liber. */
-  createUser({ email, name, department, password }) {
-    const u = new User({
-      id:           newID(),
-      email:        (email || '').trim(),
-      name:         (name || '').trim(),
-      username:     (email || '').split('@')[0].trim(),
-      department:   (department || '').trim(),
-      passwordHash: bcrypt.hashSync(password, 10),
-    });
-    this._users.set(u.id, u);
-    return u;
+  async createUser({ email, name, department, password }) {
+    const id       = newID();
+    const hash     = bcrypt.hashSync(password, 10);
+    const username = (email || '').split('@')[0].trim();
+    await this.pool.query(
+      `INSERT INTO users (id, email, name, username, department, password_hash)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [id, (email || '').trim(), (name || '').trim(), username, (department || '').trim(), hash]
+    );
+    return this.getUser(id);
   }
 
   // ---------- acces proiecte ----------
 
-  projects(userID) {
-    const out = [];
-    for (const p of this._projects.values()) {
-      if (p.userID === userID) out.push(p);
-    }
-    return out.sort((a, b) => b.updatedAt - a.updatedAt);
-  }
-
-  search(userID, query) {
-    const q = foldRO(query);
-    const all = this.projects(userID);
-    if (!q) return all;
-    return all.filter(p =>
-      foldRO(p.name).includes(q) || foldRO(p.description).includes(q)
+  async projects(userID) {
+    const r = await this.pool.query(
+      'SELECT * FROM projects WHERE user_id = $1 ORDER BY updated_at DESC',
+      [userID]
     );
+    return r.rows.map(rowToProject);
   }
 
-  getProject(id) {
-    return this._projects.get(id) || null;
+  async search(userID, query) {
+    if (!query) return this.projects(userID);
+    const r = await this.pool.query(
+      `SELECT * FROM projects
+       WHERE user_id = $1 AND (name ILIKE $2 OR description ILIKE $2)
+       ORDER BY updated_at DESC`,
+      [userID, `%${query}%`]
+    );
+    return r.rows.map(rowToProject);
   }
 
-  create(userID, skillID, name, description) {
+  async getProject(id) {
+    const r = await this.pool.query('SELECT * FROM projects WHERE id = $1', [id]);
+    return r.rows.length ? rowToProject(r.rows[0]) : null;
+  }
+
+  async create(userID, skillID, name, description) {
     const id = newID();
-    const p = new Project({
-      id,
-      userID,
-      skillID,
-      name,
-      description,
-      workspacePath: workspacePath(userID, id),
-      status: STATUS.QUEUED,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    this._projects.set(id, p);
+    const wp = workspacePath(userID, id);
+    await this.pool.query(
+      `INSERT INTO projects (id, user_id, skill_id, name, description, workspace_path, status, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,'queued',NOW(),NOW())`,
+      [id, userID, skillID, name, description, wp]
+    );
+    const p = await this.getProject(id);
     this._build(id);
     return p;
   }
 
-  update(id, skillID, name, description) {
-    const p = this._projects.get(id);
-    if (!p) return;
-    p.skillID     = skillID;
-    p.name        = name;
-    p.description = description;
-    p.status      = STATUS.QUEUED;
-    p.updatedAt   = new Date();
+  async update(id, skillID, name, description) {
+    await this.pool.query(
+      `UPDATE projects SET skill_id=$2, name=$3, description=$4, status='queued', updated_at=NOW()
+       WHERE id=$1`,
+      [id, skillID, name, description]
+    );
     this._build(id);
   }
 
-  handOff(id) {
-    const p = this._projects.get(id);
-    if (!p || p.status === STATUS.HANDED_OFF || p.status === STATUS.DONE) return;
-    this._ticket++;
-    p.ticketID  = this._ticket;
-    p.status    = STATUS.HANDED_OFF;
-    p.handedAt  = new Date();
-    p.updatedAt = p.handedAt;
-    if (!p.completedAt) p.completedAt = p.handedAt;
+  async handOff(id) {
+    const r = await this.pool.query("SELECT nextval('ticket_seq') AS t");
+    const ticketID = parseInt(r.rows[0].t, 10);
+    await this.pool.query(
+      `UPDATE projects
+       SET status='handed_off', ticket_id=$2, handed_at=NOW(), updated_at=NOW(),
+           completed_at = COALESCE(completed_at, NOW())
+       WHERE id=$1 AND status NOT IN ('handed_off','done')`,
+      [id, ticketID]
+    );
+  }
+
+  async stats(userID) {
+    const r = await this.pool.query(
+      `SELECT
+         COUNT(*)                                                    AS total,
+         COUNT(*) FILTER (WHERE status='draft')                     AS drafts,
+         COUNT(*) FILTER (WHERE status IN ('handed_off','done'))    AS handed_off,
+         AVG(duration_sec) FILTER (WHERE duration_sec > 0)         AS avg_sec,
+         COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days') AS recent
+       FROM projects WHERE user_id=$1`,
+      [userID]
+    );
+    const row = r.rows[0];
+    const st  = {
+      total:     parseInt(row.total, 10),
+      drafts:    parseInt(row.drafts, 10),
+      handedOff: parseInt(row.handed_off, 10),
+      avgTime:   row.avg_sec ? `${Math.round(parseFloat(row.avg_sec))}s` : '—',
+      recentPhrase: '',
+    };
+    const recent = parseInt(row.recent, 10);
+    if (recent === 0)      st.recentPhrase = 'Niciun proiect în ultimele două săptămâni.';
+    else if (recent === 1) st.recentPhrase = 'Ai un proiect în ultimele două săptămâni.';
+    else                   st.recentPhrase = `Ai ${recent} proiecte în ultimele două săptămâni.`;
+    return st;
   }
 
   // ---------- generare (Python runner / simulare) ----------
 
   _build(id) {
-    // Seteaza status "running" dupa 300ms
-    setTimeout(() => {
-      const p = this._projects.get(id);
-      if (p && p.status === STATUS.QUEUED) p.status = STATUS.RUNNING;
+    const pool      = this.pool;
+    const delay     = this.buildDelay;
+
+    setTimeout(async () => {
+      await pool.query(
+        "UPDATE projects SET status='running' WHERE id=$1 AND status='queued'",
+        [id]
+      );
     }, 300);
 
-    const project = this._projects.get(id);
-    if (!project) return;
+    this.getProject(id).then(project => {
+      if (!project) return;
 
-    // Incearca Python runner; daca nu e disponibil, simuleaza
-    const runnerPath = path.join(__dirname, '../python/runner.py');
-    const wsPath     = path.join(__dirname, '../../..', project.workspacePath);
+      const runnerPath = path.join(__dirname, '../python/runner.py');
+      const wsPath     = path.join(__dirname, '../../..', project.workspacePath);
 
-    const py = spawn('python3', [
-      runnerPath,
-      '--skill-id',    project.skillID,
-      '--description', project.description,
-      '--workspace',   wsPath,
-    ]);
+      const py = spawn('python3', [
+        runnerPath,
+        '--skill-id',    project.skillID,
+        '--description', project.description,
+        '--workspace',   wsPath,
+      ]);
 
-    let stdout = '';
-    py.stdout.on('data', d => { stdout += d.toString(); });
+      let stdout = '';
+      py.stdout.on('data', d => { stdout += d.toString(); });
 
-    const onDone = (durationSec) => {
-      const p = this._projects.get(id);
-      if (!p) return;
-      p.status      = STATUS.DRAFT;
-      p.completedAt = new Date();
-      p.updatedAt   = p.completedAt;
-      p.durationSec = durationSec;
-    };
+      const onDone = async (durationSec) => {
+        await pool.query(
+          `UPDATE projects SET status='draft', completed_at=NOW(), updated_at=NOW(), duration_sec=$2
+           WHERE id=$1`,
+          [id, durationSec]
+        );
+      };
 
-    const onFail = () => {
-      const p = this._projects.get(id);
-      if (!p) return;
-      p.status    = STATUS.FAILED;
-      p.updatedAt = new Date();
-    };
+      const onFail = async () => {
+        await pool.query(
+          "UPDATE projects SET status='failed', updated_at=NOW() WHERE id=$1",
+          [id]
+        );
+      };
 
-    py.on('close', (code) => {
-      try {
-        const result = JSON.parse(stdout);
-        if (result.status === 'done') onDone(result.duration_sec || 42);
-        else onFail();
-      } catch {
-        onFail();
-      }
+      py.on('close', () => {
+        try {
+          const result = JSON.parse(stdout);
+          if (result.status === 'done') onDone(result.duration_sec || 42);
+          else onFail();
+        } catch {
+          onFail();
+        }
+      });
+
+      py.on('error', () => {
+        setTimeout(() => onDone(Math.max(1, Math.round(delay / 1000))), delay);
+      });
     });
-
-    py.on('error', () => {
-      // Python nu e instalat — simulare cu timeout
-      setTimeout(() => onDone(Math.max(1, Math.round(this.buildDelay / 1000))), this.buildDelay);
-    });
-  }
-
-  // ---------- statistici ----------
-
-  stats(userID) {
-    const all = this.projects(userID);
-    const st  = { total: all.length, drafts: 0, handedOff: 0, avgTime: '—', recentPhrase: '' };
-    let totalSec = 0, counted = 0;
-
-    for (const p of all) {
-      if (p.status === STATUS.DRAFT) st.drafts++;
-      if (p.status === STATUS.HANDED_OFF || p.status === STATUS.DONE) st.handedOff++;
-      if (p.durationSec > 0) { totalSec += p.durationSec; counted++; }
-    }
-
-    if (counted > 0) st.avgTime = `${Math.round(totalSec / counted)}s`;
-
-    const cutoff = new Date(Date.now() - 14 * 86400000);
-    const recent = all.filter(p => p.createdAt > cutoff).length;
-    if (recent === 0) st.recentPhrase = 'Niciun proiect în ultimele două săptămâni.';
-    else if (recent === 1) st.recentPhrase = 'Ai un proiect în ultimele două săptămâni.';
-    else st.recentPhrase = `Ai ${recent} proiecte în ultimele două săptămâni.`;
-
-    return st;
   }
 }
 

@@ -1,7 +1,7 @@
 'use strict';
 // server.js — Serverul Express al Libra Maker.
 // Inlocuieste harness/backend/internal/web/server.go.
-// Stack: Node.js 20 + Express 4 + Nunjucks + express-session + bcryptjs.
+// Stack: Node.js 20 + Express 4 + Nunjucks + express-session + bcryptjs + PostgreSQL.
 
 const path    = require('path');
 const express = require('express');
@@ -56,8 +56,8 @@ function hxRedirect(req, res, url) {
 
 /** Middleware de autentificare: necesita sesiune valida. */
 function auth(handler) {
-  return (req, res, next) => {
-    const user = req.session.userID ? store.getUser(req.session.userID) : null;
+  return async (req, res, next) => {
+    const user = req.session.userID ? await store.getUser(req.session.userID) : null;
     if (!user) {
       if (req.headers['hx-request']) {
         res.set('HX-Redirect', '/login');
@@ -73,15 +73,15 @@ function auth(handler) {
 // ---------- rute publice ----------
 
 // Radacina: redirecteaza la acasa daca e autentificat, altfel la login
-app.get('/', (req, res) => {
-  const user = req.session.userID ? store.getUser(req.session.userID) : null;
+app.get('/', async (req, res) => {
+  const user = req.session.userID ? await store.getUser(req.session.userID) : null;
   if (user) return res.redirect('/acasa');
   return res.redirect('/login');
 });
 
 // GET /login
-app.get('/login', (req, res) => {
-  const user = req.session.userID ? store.getUser(req.session.userID) : null;
+app.get('/login', async (req, res) => {
+  const user = req.session.userID ? await store.getUser(req.session.userID) : null;
   if (user) return res.redirect('/acasa');
   return res.render('pages/login.html', { title: 'Autentificare' });
 });
@@ -91,7 +91,7 @@ app.post('/auth/login', async (req, res) => {
   const email    = (req.body.email    || '').trim();
   const password = (req.body.password || '');
 
-  const user  = store.findUserByEmail(email);
+  const user  = await store.findUserByEmail(email);
   const valid = user && await bcrypt.compare(password, user.passwordHash);
 
   if (!valid) {
@@ -107,8 +107,8 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // GET /inregistrare
-app.get('/inregistrare', (req, res) => {
-  const user = req.session.userID ? store.getUser(req.session.userID) : null;
+app.get('/inregistrare', async (req, res) => {
+  const user = req.session.userID ? await store.getUser(req.session.userID) : null;
   if (user) return res.redirect('/acasa');
   return res.render('pages/register.html', { title: 'Creează cont' });
 });
@@ -130,7 +130,7 @@ app.post('/auth/register', async (req, res) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return fail('Introdu o adresă de email validă.');
   }
-  if (store.findUserByEmail(email)) {
+  if (await store.findUserByEmail(email)) {
     return fail('Există deja un cont cu acest email. Încearcă să te autentifici.');
   }
   if (password.length < 8) {
@@ -140,7 +140,7 @@ app.post('/auth/register', async (req, res) => {
     return fail('Parolele introduse nu coincid.');
   }
 
-  const user = store.createUser({ email, name, department, password });
+  const user = await store.createUser({ email, name, department, password });
   req.session.userID = user.id;
   return req.session.save(() => res.redirect('/acasa'));
 });
@@ -153,32 +153,32 @@ app.post('/logout', (req, res) => {
 // ---------- rute autentificate ----------
 
 // GET /acasa
-app.get('/acasa', auth((req, res) => {
-  const projects = store.projects(req.user.id).slice(0, 5);
+app.get('/acasa', auth(async (req, res) => {
+  const projects = (await store.projects(req.user.id)).slice(0, 5);
   return res.render('pages/home.html', {
     title:       'Acasă',
     nav:         'acasa',
     sidebarFoot: 'promo',
     user:        req.user,
-    stats:       store.stats(req.user.id),
+    stats:       await store.stats(req.user.id),
     projects,
   });
 }));
 
 // GET /proiectele-mele
-app.get('/proiectele-mele', auth((req, res) => {
+app.get('/proiectele-mele', auth(async (req, res) => {
   return res.render('pages/projects.html', {
     title:       'Proiectele mele',
     nav:         'proiectele-mele',
     sidebarFoot: 'promo',
     user:        req.user,
-    projects:    store.projects(req.user.id),
+    projects:    await store.projects(req.user.id),
   });
 }));
 
 // GET /proiecte/cauta — fragment HTMX pentru bara de cautare
-app.get('/proiecte/cauta', auth((req, res) => {
-  const found = store.search(req.user.id, req.query.q || '');
+app.get('/proiecte/cauta', auth(async (req, res) => {
+  const found = await store.search(req.user.id, req.query.q || '');
   return res.render('partials/project-list.html', { projects: found });
 }));
 
@@ -219,7 +219,7 @@ app.get('/proiect-nou/detalii', auth((req, res) => {
 }));
 
 // POST /proiect-nou/detalii — valideaza si creeaza/actualizeaza proiectul
-app.post('/proiect-nou/detalii', auth((req, res) => {
+app.post('/proiect-nou/detalii', auth(async (req, res) => {
   const skillID = (req.body.skill_id    || '').trim();
   const tool    = toolByID(skillID);
   if (!tool) return hxRedirect(req, res, '/proiect-nou');
@@ -240,20 +240,20 @@ app.post('/proiect-nou/detalii', auth((req, res) => {
 
   const existingID = (req.body.project_id || '').trim();
   if (existingID) {
-    const existing = store.getProject(existingID);
+    const existing = await store.getProject(existingID);
     if (existing && existing.userID === req.user.id) {
-      store.update(existing.id, skillID, name, description);
+      await store.update(existing.id, skillID, name, description);
       return hxRedirect(req, res, `/proiect/${existing.id}`);
     }
   }
 
-  const p = store.create(req.user.id, skillID, name, description);
+  const p = await store.create(req.user.id, skillID, name, description);
   return hxRedirect(req, res, `/proiect/${p.id}`);
 }));
 
 // GET /proiect/:id/detalii — editare proiect existent
-app.get('/proiect/:id/detalii', auth((req, res) => {
-  const p = store.getProject(req.params.id);
+app.get('/proiect/:id/detalii', auth(async (req, res) => {
+  const p = await store.getProject(req.params.id);
   if (!p || p.userID !== req.user.id) return res.status(404).send('Proiect negăsit.');
 
   const tool = toolByID(p.skillID);
@@ -274,8 +274,8 @@ app.get('/proiect/:id/detalii', auth((req, res) => {
 }));
 
 // GET /proiect/:id — vizualizare proiect (generare / rezultat / handoff)
-app.get('/proiect/:id', auth((req, res) => {
-  const p = store.getProject(req.params.id);
+app.get('/proiect/:id', auth(async (req, res) => {
+  const p = await store.getProject(req.params.id);
   if (!p || p.userID !== req.user.id) return res.status(404).send('Proiect negăsit.');
 
   if (p.status === STATUS.QUEUED || p.status === STATUS.RUNNING) {
@@ -298,8 +298,8 @@ app.get('/proiect/:id', auth((req, res) => {
 }));
 
 // GET /proiect/:id/status — sondaj HTMX (204 cat ruleaza, HX-Redirect cand e gata)
-app.get('/proiect/:id/status', auth((req, res) => {
-  const p = store.getProject(req.params.id);
+app.get('/proiect/:id/status', auth(async (req, res) => {
+  const p = await store.getProject(req.params.id);
   if (!p || p.userID !== req.user.id) return res.status(404).send();
 
   if (p.status === STATUS.QUEUED || p.status === STATUS.RUNNING) {
@@ -309,17 +309,17 @@ app.get('/proiect/:id/status', auth((req, res) => {
 }));
 
 // POST /proiect/:id/handoff — preda proiectul echipei Dev
-app.post('/proiect/:id/handoff', auth((req, res) => {
-  const p = store.getProject(req.params.id);
+app.post('/proiect/:id/handoff', auth(async (req, res) => {
+  const p = await store.getProject(req.params.id);
   if (!p || p.userID !== req.user.id) return res.status(404).send();
 
-  store.handOff(p.id);
+  await store.handOff(p.id);
   return hxRedirect(req, res, `/proiect/${p.id}/predat`);
 }));
 
 // GET /proiect/:id/predat — confirmare handoff
-app.get('/proiect/:id/predat', auth((req, res) => {
-  const p = store.getProject(req.params.id);
+app.get('/proiect/:id/predat', auth(async (req, res) => {
+  const p = await store.getProject(req.params.id);
   if (!p || p.userID !== req.user.id) return res.status(404).send();
 
   if (p.status !== STATUS.HANDED_OFF && p.status !== STATUS.DONE) {
@@ -336,7 +336,15 @@ app.get('/proiect/:id/predat', auth((req, res) => {
 // ---------- pornire server ----------
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
-app.listen(PORT, () => {
-  console.log(`Libra Maker (Node.js) pornit pe http://localhost:${PORT}`);
-  console.log(`Utilizator demo: ana.popescu@libra.ro / libra2025`);
-});
+
+store.init()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Libra Maker (Node.js) pornit pe http://localhost:${PORT}`);
+      console.log(`Utilizator demo: ana.popescu@libra.ro / libra2025`);
+    });
+  })
+  .catch(err => {
+    console.error('Eroare la initializarea bazei de date:', err);
+    process.exit(1);
+  });

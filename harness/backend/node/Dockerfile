@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Copiem mai intai package.json pentru cache layer
 COPY backend/node/package.json backend/node/package-lock.json* ./node/
-RUN cd node && npm ci --only=production
+RUN cd node && npm install --only=production
 
 # Copiem codul Node.js si Python
 COPY backend/node/   ./node/
