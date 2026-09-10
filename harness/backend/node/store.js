@@ -225,7 +225,8 @@ function rowToProject(row) {
 
 class Store {
   constructor() {
-    this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const ssl = process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false;
+    this.pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl });
     this.buildDelay = parseInt(process.env.BUILD_DELAY_MS || '2500', 10);
   }
 
