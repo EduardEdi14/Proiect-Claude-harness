@@ -38,9 +38,15 @@
 (function () {
   "use strict";
 
-  // Ruleaza doar pe pagina Agent Builder.
+  // Ruleaza doar pe pagina Agent Builder...
   var msgList = document.getElementById("chat-messages");
   if (!msgList) return;
+
+  // ...si doar cand asistentul nu e configurat. Cand e, discutia o poarta
+  // blocul 3 de mai jos, cu modelul; masina asta de stari ramane ca plasa
+  // pentru instalarile fara cheie de API, ca ecranul sa functioneze oricum.
+  var abWrap = document.querySelector(".ab-wrap");
+  if (abWrap && abWrap.getAttribute("data-agent") === "1") return;
 
   var input    = document.getElementById("chat-input");
   var sendBtn  = document.getElementById("chat-send");
@@ -435,4 +441,268 @@
   } else {
     Array.prototype.forEach.call(nums, run);
   }
+})();
+
+/* ============================================================
+   3. Asistentul din ecranul "Construiesti pagina ta"
+
+   Inlocuieste masina de stari de mai sus cand asistentul e configurat:
+   vorbeste cu modelul prin /asistent/*, arata consumul sub fiecare raspuns
+   si, dupa construire, duce la pagina proiectului.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var wrap = document.querySelector(".ab-wrap");
+  if (!wrap || wrap.getAttribute("data-agent") !== "1") return;
+
+  var list     = document.getElementById("chat-messages");
+  var chat     = document.getElementById("ab-chat");
+  var browse   = document.getElementById("ab-browse");
+  var input    = document.getElementById("chat-input");
+  var sendBtn  = document.getElementById("chat-send");
+  var totalEl  = document.getElementById("ab-total");
+  if (!list || !input || !sendBtn) return;
+
+  var initials = wrap.getAttribute("data-initials") || "EU";
+  var brief = { nume: "", descriere: "", skill: "nedecis", gata: false };
+  var total = { tokeni: 0, cost: 0, apeluri: 0 };
+  var busy  = false;
+
+  // ---- afisare ---------------------------------------------------
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function bani(usd) { return usd >= 0.01 ? "$" + usd.toFixed(3) : "$" + usd.toFixed(5); }
+  function scroll() { list.scrollTop = list.scrollHeight; }
+
+  /** La primul mesaj, gridul de sabloane lasa locul discutiei. */
+  function deschideChat() {
+    if (chat && chat.hidden) {
+      chat.hidden = false;
+      if (browse) browse.style.display = "none";
+    }
+  }
+
+  function addUser(text) {
+    deschideChat();
+    var d = document.createElement("div");
+    d.className = "bubble bubble--user";
+    d.innerHTML = '<div class="bubble-avatar bubble-avatar--user">' + esc(initials) + "</div>" +
+      '<div class="bubble-body">' + esc(text).replace(/\n/g, "<br>") + "</div>";
+    list.appendChild(d);
+    scroll();
+  }
+
+  function markAvatar() {
+    return '<div class="bubble-avatar"><div class="lm-mark">' +
+      '<div class="lm-a1"></div><div class="lm-row"><div class="lm-a2"></div><div class="lm-a3"></div></div>' +
+      "</div></div>";
+  }
+
+  function addBot(text, cost) {
+    deschideChat();
+    var usage = "";
+    if (cost) {
+      var parts = [
+        "<span><b>" + cost.tokeniTotal.toLocaleString("ro-RO") + "</b> tokeni</span>",
+        "<span>" + cost.tokeniIntrare.toLocaleString("ro-RO") + " intrare · " +
+          cost.tokeniIesire.toLocaleString("ro-RO") + " ieșire</span>",
+        "<span><b>" + bani(cost.costUSD) + "</b></span>",
+      ];
+      if (cost.tokeniCacheCitit > 0) {
+        parts.push("<span>" + cost.tokeniCacheCitit.toLocaleString("ro-RO") + " din cache</span>");
+      }
+      usage = '<div class="as-usage">' + parts.join("") + "</div>";
+    }
+    var d = document.createElement("div");
+    d.className = "bubble bubble--bot";
+    d.innerHTML = markAvatar() + '<div class="bubble-body"><p>' +
+      esc(text).replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>") + "</p>" + usage + "</div>";
+    list.appendChild(d);
+    scroll();
+  }
+
+  function addChips(butoane) {
+    if (!butoane || !butoane.length) return;
+    var w = document.createElement("div");
+    w.className = "as-suggest";
+    butoane.slice(0, 4).forEach(function (b) {
+      var btn = document.createElement("button");
+      btn.className = "as-chip";
+      btn.type = "button";
+      btn.textContent = b;
+      w.appendChild(btn);
+    });
+    list.appendChild(w);
+    scroll();
+  }
+
+  function lockChips() {
+    Array.prototype.forEach.call(list.querySelectorAll(".as-chip:not([disabled])"),
+      function (c) { c.disabled = true; });
+  }
+
+  function showTyping() {
+    var d = document.createElement("div");
+    d.className = "bubble bubble--bot typing-bubble";
+    d.id = "ab-typing";
+    d.innerHTML = markAvatar() +
+      '<div class="bubble-body"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+    list.appendChild(d);
+    scroll();
+  }
+  function hideTyping() {
+    var t = document.getElementById("ab-typing");
+    if (t) t.remove();
+  }
+
+  function addTotal(cost) {
+    total.tokeni += cost.tokeniTotal;
+    total.cost   += cost.costUSD;
+    total.apeluri += 1;
+    if (!totalEl) return;
+    totalEl.hidden = false;
+    totalEl.textContent = "Conversație: " + total.tokeni.toLocaleString("ro-RO") +
+      " tokeni · " + bani(total.cost) + " · " + total.apeluri +
+      (total.apeluri === 1 ? " apel" : " apeluri");
+  }
+
+  /** Cardul de confirmare cu care se porneste constructia. */
+  function addConfirm() {
+    var d = document.createElement("div");
+    d.className = "confirm-actions";
+    d.id = "ab-confirm";
+    d.innerHTML =
+      '<button class="btn btn--primary btn--sm" type="button" id="ab-build">Construiește pagina</button>' +
+      '<button class="btn btn--ghost btn--sm" type="button" id="ab-more">Mai schimb ceva</button>';
+    list.appendChild(d);
+    scroll();
+
+    document.getElementById("ab-build").addEventListener("click", build);
+    document.getElementById("ab-more").addEventListener("click", function () {
+      d.remove();
+      input.focus();
+    });
+  }
+
+  // ---- discutia ---------------------------------------------------
+  function syncSend() { sendBtn.disabled = busy || input.value.trim().length === 0; }
+  function resize() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 180) + "px";
+  }
+
+  async function send(text) {
+    if (busy || !text) return;
+    busy = true;
+    lockChips();
+    var vechi = document.getElementById("ab-confirm");
+    if (vechi) vechi.remove();
+
+    addUser(text);
+    input.value = "";
+    resize();
+    syncSend();
+    showTyping();
+
+    try {
+      var r = await fetch("/asistent/mesaj", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mesaj: text }),
+      });
+      hideTyping();
+      if (!r.ok) {
+        var e = await r.json().catch(function () { return {}; });
+        addBot(e.eroare || "Nu am putut trimite mesajul. Încearcă din nou.", null);
+        return;
+      }
+      var d = await r.json();
+      addBot(d.raspuns, d.cost);
+      addTotal(d.cost);
+      addChips(d.butoane);
+
+      brief.skill = d.skill || brief.skill;
+      if (d.nume)      brief.nume = d.nume;
+      if (d.descriere) brief.descriere = d.descriere;
+      brief.gata = Boolean(d.gata);
+      if (brief.gata) addConfirm();
+    } catch (err) {
+      hideTyping();
+      addBot("Conexiunea a căzut. Încearcă din nou.", null);
+    } finally {
+      busy = false;
+      syncSend();
+    }
+  }
+
+  // ---- construirea -------------------------------------------------
+  async function build() {
+    if (busy || !brief.gata) return;
+    busy = true;
+    syncSend();
+    var conf = document.getElementById("ab-confirm");
+    if (conf) conf.remove();
+
+    addBot("Construiesc pagina „" + brief.nume + "”. Durează un minut.", null);
+    showTyping();
+
+    try {
+      var r = await fetch("/asistent/construieste", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(brief),
+      });
+      var d = await r.json();
+      hideTyping();
+
+      if (!r.ok) {
+        addBot(d.eroare || "Nu am putut construi pagina.", null);
+        addConfirm();
+        return;
+      }
+      addTotal(d.cost);
+      // Pagina si implementarea se vad in ecranul proiectului — acolo se
+      // previzualizeaza si de acolo pleaca la echipa de dezvoltare.
+      window.location.href = d.proiectURL;
+    } catch (err) {
+      hideTyping();
+      addBot("Construirea a eșuat. Încearcă din nou.", null);
+      addConfirm();
+    } finally {
+      busy = false;
+      syncSend();
+    }
+  }
+
+  // ---- legaturi ----------------------------------------------------
+  input.addEventListener("input", function () { resize(); syncSend(); });
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) send(input.value.trim());
+    }
+  });
+  sendBtn.addEventListener("click", function () { send(input.value.trim()); });
+
+  list.addEventListener("click", function (e) {
+    var chip = e.target.closest(".as-chip");
+    if (chip && !chip.disabled && !busy) send(chip.textContent.trim());
+  });
+
+  // Cardurile de sablon trimit direct textul lor ca prim mesaj.
+  Array.prototype.forEach.call(document.querySelectorAll(".ab-card"), function (card) {
+    card.addEventListener("click", function (e) {
+      e.preventDefault();
+      var t = card.getAttribute("data-tpl");
+      if (t) send(t);
+    });
+  }, true);
+
+  // Descrierea venita din "Descopera" (?tpl=) porneste discutia direct.
+  var preset = wrap.getAttribute("data-preset") || "";
+  if (preset) { input.value = preset; resize(); syncSend(); }
 })();

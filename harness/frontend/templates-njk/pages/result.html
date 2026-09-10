@@ -18,6 +18,11 @@
           <span class="dot dot--r"></span><span class="dot dot--y"></span><span class="dot dot--g"></span>
           <span class="preview-file">previzualizare · {{ project.fileName() }}</span>
         </div>
+        {% if arePagina %}
+        {# Pagina construita, servita izolat: iframe cu sandbox, fara acces la sesiune. #}
+        <iframe class="preview-frame" src="/proiect/{{ project.id }}/pagina"
+                title="Pagina construită" sandbox="allow-forms allow-scripts"></iframe>
+        {% else %}
         <div class="preview-body">
           <div class="preview-title">{{ project.name }}</div>
           <div class="preview-text">{{ project.summary() }}</div>
@@ -30,6 +35,7 @@
             </div>
           </div>
         </div>
+        {% endif %}
       </div>
 
       <div class="btn-row">

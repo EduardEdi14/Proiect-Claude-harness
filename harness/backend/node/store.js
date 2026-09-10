@@ -378,6 +378,22 @@ class Store {
     return p;
   }
 
+  /**
+   * Proiect venit de la asistent: pagina e deja construita, deci intra direct
+   * ca ciorna. Nu pornim runner-ul — nu mai avem ce genera.
+   */
+  async createBuilt(userID, skillID, name, description, durationSec) {
+    const id = newID();
+    const wp = workspacePath(userID, id);
+    await this.pool.query(
+      `INSERT INTO projects (id, user_id, skill_id, name, description, workspace_path,
+                             status, duration_sec, created_at, updated_at, completed_at)
+       VALUES ($1,$2,$3,$4,$5,$6,'draft',$7,NOW(),NOW(),NOW())`,
+      [id, userID, skillID, name, description, wp, durationSec || 0]
+    );
+    return this.getProject(id);
+  }
+
   async update(id, skillID, name, description) {
     await this.pool.query(
       `UPDATE projects SET skill_id=$2, name=$3, description=$4, status='queued', updated_at=NOW()
