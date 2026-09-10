@@ -1,0 +1,27 @@
+version: "3.9"
+# docker-compose.node.client.yml — pentru colegii care se conecteaza la baza de date comuna.
+# Pornire: docker compose -f docker-compose.node.client.yml up -d
+# Baza de date ruleaza pe laptopul lui Ioana (192.168.149.147).
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: backend/node/Dockerfile
+    image: libra-maker-node:latest
+    ports:
+      - "3000:8080"
+    environment:
+      PORT: "8080"
+      NODE_ENV: "development"
+      SESSION_SECRET: "libra-maker-secret-schimba-in-productie"
+      BUILD_DELAY_MS: "2500"
+      DATABASE_URL: "postgresql://libramaker:libramaker2025@192.168.149.147:5432/libramaker"
+    volumes:
+      - ./frontend/templates-njk:/frontend/templates-njk:ro
+      - ./frontend/static:/frontend/static:ro
+      - libra_workspaces:/app/workspaces
+    restart: unless-stopped
+
+volumes:
+  libra_workspaces:
