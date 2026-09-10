@@ -97,6 +97,18 @@
     });
   });
 
+  // -- Pre-completare dintr-un sablon "Descopera" --------------------
+  // Cardul de pe pagina Acasa trimite descrierea prin ?tpl=; o punem in
+  // caseta si lasam utilizatorul sa o ajusteze inainte de a o trimite.
+  var preset = wrap ? (wrap.getAttribute("data-preset") || "") : "";
+  if (preset && input && !input.value) {
+    input.value = preset;
+    // resize/syncSend sunt declaratii de functie, deci sunt deja disponibile aici:
+    // caseta se inalta la textul primit, iar butonul de trimitere devine activ.
+    resize(input);
+    syncSend();
+  }
+
   // -- Auto-resize textarea ------------------------------------------
   function resize(el) {
     el.style.height = "auto";
@@ -249,4 +261,188 @@
   }
 
   input.focus();
+})();
+
+/* ---------------------------------------------------------------------------
+   Comutator de tema (luminos / intunecat)
+
+   Sursa adevarului e atributul data-theme de pe <html>, pus deja de scriptul
+   din <head> inainte de prima randare. Aici doar il schimbam si il salvam.
+   Valoarea "" inseamna "urmeaza sistemul" — CSS-ul o trateaza prin
+   prefers-color-scheme, deci nu avem nevoie de o a treia stare vizibila.
+--------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+
+  var root    = document.documentElement;
+  var buttons = document.querySelectorAll("[data-theme-set]");
+  if (!buttons.length) return;
+
+  function systemPrefersDark() {
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  /** Tema efectiv afisata, tinand cont si de preferinta sistemului. */
+  function effectiveTheme() {
+    var explicit = root.getAttribute("data-theme");
+    if (explicit === "dark" || explicit === "light") return explicit;
+    return systemPrefersDark() ? "dark" : "light";
+  }
+
+  function syncButtons() {
+    var current = effectiveTheme();
+    Array.prototype.forEach.call(buttons, function (btn) {
+      var mine = btn.getAttribute("data-theme-set");
+      btn.setAttribute("aria-pressed", mine === current ? "true" : "false");
+    });
+  }
+
+  function setTheme(value) {
+    root.setAttribute("data-theme", value);
+    try { localStorage.setItem("lm-theme", value); } catch (e) { /* modul privat */ }
+    syncButtons();
+  }
+
+  Array.prototype.forEach.call(buttons, function (btn) {
+    btn.addEventListener("click", function () {
+      setTheme(btn.getAttribute("data-theme-set"));
+    });
+  });
+
+  // Cat timp utilizatorul nu a ales explicit, urmam schimbarile din sistem.
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onChange = function () {
+      var explicit = root.getAttribute("data-theme");
+      if (explicit !== "dark" && explicit !== "light") syncButtons();
+    };
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+
+  syncButtons();
+})();
+
+/* ---------------------------------------------------------------------------
+   Sectiunea "Descopera" de pe pagina Acasa
+
+   Filtrarea se face in browser, pe cardurile deja randate — nicio cerere la
+   server. Click pe un card deschide ecranul de construire cu descrierea gata
+   completata, prin parametrul ?tpl=.
+--------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+
+  var grid = document.getElementById("discover-grid");
+  if (!grid) return;
+
+  var cards = grid.querySelectorAll(".tpl-card");
+  var chips = document.querySelectorAll(".filter-chip");
+
+  // -- Filtrare ------------------------------------------------------
+  var emptyEl = null;
+
+  function showEmpty(show) {
+    if (show && !emptyEl) {
+      emptyEl = document.createElement("div");
+      emptyEl.className = "discover-empty";
+      emptyEl.textContent = "Niciun șablon în această categorie.";
+      grid.appendChild(emptyEl);
+    } else if (!show && emptyEl) {
+      grid.removeChild(emptyEl);
+      emptyEl = null;
+    }
+  }
+
+  function applyFilter(cat) {
+    var visible = 0;
+    Array.prototype.forEach.call(cards, function (card) {
+      var match = cat === "toate" || card.getAttribute("data-cat") === cat;
+      card.classList.toggle("is-hidden", !match);
+      if (match) visible++;
+    });
+    showEmpty(visible === 0);
+  }
+
+  Array.prototype.forEach.call(chips, function (chip) {
+    chip.addEventListener("click", function () {
+      Array.prototype.forEach.call(chips, function (c) {
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      });
+      applyFilter(chip.getAttribute("data-filter"));
+    });
+  });
+
+  // -- Pornirea unui proiect dintr-un sablon -------------------------
+  Array.prototype.forEach.call(cards, function (card) {
+    card.addEventListener("click", function () {
+      var skill = card.getAttribute("data-skill") || "";
+      var tpl   = card.getAttribute("data-tpl") || "";
+      window.location.href = "/proiect-nou/detalii?skill=" +
+        encodeURIComponent(skill) + "&tpl=" + encodeURIComponent(tpl);
+    });
+  });
+})();
+
+/* ---------------------------------------------------------------------------
+   Animatia de numarare din casetele de activitate
+
+   Cifra creste de la 0 la valoarea reala. Valoarea finala e deja in HTML, deci
+   fara JS (sau cu miscare redusa) caseta arata exact la fel — animatia doar
+   inlocuieste temporar textul, nu il produce.
+--------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+
+  var nums = document.querySelectorAll(".stat-num[data-count]");
+  if (!nums.length) return;
+
+  var reduced = window.matchMedia &&
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) return;
+
+  var DURATION = 850;
+
+  function ease(t) { return 1 - Math.pow(1 - t, 3); }  // incetineste spre final
+
+  function run(el) {
+    var target = parseInt(el.getAttribute("data-count"), 10);
+    var suffix = el.getAttribute("data-suffix") || "";
+    if (!isFinite(target) || target <= 0) return;   // 0 nu are ce sa numere
+
+    // Valoarea corecta e deja in element. Nu o stergem inainte de prima cadra,
+    // si o restauram oricum dupa durata animatiei: daca requestAnimationFrame
+    // nu ruleaza (fila in fundal, randare fara animatii), cifra ramane corecta
+    // in loc sa inghete pe zero.
+    var done = false;
+    function settle() {
+      if (done) return;
+      done = true;
+      el.textContent = target + suffix;
+    }
+    var guard = setTimeout(settle, DURATION + 400);
+
+    var start = null;
+    function frame(now) {
+      if (done) return;
+      if (start === null) start = now;
+      var t = Math.min(1, (now - start) / DURATION);
+      if (t >= 1) { clearTimeout(guard); settle(); return; }
+      el.textContent = Math.round(ease(t) * target) + suffix;
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // Pornim doar cand caseta a intrat in ecran, ca sa nu se consume nevazuta.
+  if (typeof IntersectionObserver === "function") {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { run(e.target); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.4 });
+    Array.prototype.forEach.call(nums, function (el) { io.observe(el); });
+  } else {
+    Array.prototype.forEach.call(nums, run);
+  }
 })();

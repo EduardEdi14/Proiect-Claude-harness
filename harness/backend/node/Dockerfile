@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 && \
 
 WORKDIR /app
 
-# Copy only package.json; use `npm install` (not `npm ci`) so that a
-# missing or stale package-lock.json is resolved inside the image layer.
+# Copiem intai package.json: `npm install` (nu `npm ci`) rezolva in imagine
+# un package-lock lipsa sau desincronizat, fara sa cerem sincronizare locala.
 COPY backend/node/package.json ./backend/node/
 RUN cd backend/node && npm install --omit=dev
 

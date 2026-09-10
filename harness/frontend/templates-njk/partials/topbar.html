@@ -1,4 +1,4 @@
-{# Bara de sus: cautare HTMX + utilizator. Variabile: user. #}
+{# Bara de sus: cautare HTMX + comutator de tema + utilizator. Variabile: user. #}
 <header class="topbar">
   <input class="search" type="search" name="q" placeholder="Caută un proiect…"
          hx-get="/proiecte/cauta"
@@ -6,6 +6,26 @@
          hx-target="#project-list"
          hx-swap="innerHTML"
          aria-label="Caută un proiect">
+
+  {# Comutator de tema: doua butoane, starea activa marcata prin aria-pressed. #}
+  <div class="theme-toggle" role="group" aria-label="Temă">
+    <button class="theme-btn" type="button" data-theme-set="light"
+            title="Temă luminoasă" aria-label="Temă luminoasă" aria-pressed="false">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="3.1" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 1.2v1.6M8 13.2v1.6M14.8 8h-1.6M2.8 8H1.2M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1M12.8 12.8l-1.1-1.1M4.3 4.3L3.2 3.2"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="theme-btn" type="button" data-theme-set="dark"
+            title="Temă întunecată" aria-label="Temă întunecată" aria-pressed="false">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M13.5 9.6A5.8 5.8 0 016.4 2.5a5.8 5.8 0 107.1 7.1z"
+              stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
   <div class="user">
     <span class="avatar">{{ user.initials() }}</span>
     <span class="user-name">{{ user.name }}</span>

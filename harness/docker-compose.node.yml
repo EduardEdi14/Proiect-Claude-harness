@@ -2,12 +2,12 @@ version: "3.9"
 # docker-compose.node.yml — serverul Node.js al Libra Maker.
 # Folosit de TOTI colegii.
 #
-# Pornire colegi (se conecteaza la baza de date de pe laptopul lui Ioana):
-#   docker compose -f docker-compose.node.yml up -d
+# Inainte de prima pornire, fa-ti fisierul de configurare:
+#   cp backend/node/.env.example backend/node/.env
+# si completeaza DATABASE_URL cu datele primite de la colegi.
+# .env nu se versioneaza — contine parole si adrese interne.
 #
-# Pornire Ioana (ruleaza si baza de date):
-#   docker compose -f docker-compose.node.db.yml up -d
-#   docker compose -f docker-compose.node.yml up -d
+# Pornire: docker compose -f docker-compose.node.yml up -d
 
 services:
   web:
@@ -17,17 +17,25 @@ services:
     image: libra-maker-node:latest
     ports:
       - "3000:8080"
+    # Valorile nesecrete au implicite aici; .env le poate suprascrie si e
+    # singurul loc cu DATABASE_URL. `required: false` lasa stiva sa porneasca
+    # si inainte ca cineva sa-si fi facut .env-ul.
     environment:
       PORT: "8080"
       NODE_ENV: "development"
-      SESSION_SECRET: "libra-maker-secret-schimba-in-productie"
       BUILD_DELAY_MS: "2500"
-      # Pe laptopul lui Ioana: host.docker.internal (adresa hostului din container)
-      # Pe laptopul colegilor: inlocuieste cu IP-ul lui Ioana (192.168.149.147)
-      DATABASE_URL: "postgresql://libramaker:libramaker2025@harness-db-1:5432/libramaker"
+      # Postgres-ul local din docker-compose.node.db.yml nu are TLS;
+      # fara asta conexiunea esueaza cu "server does not support SSL".
+      DATABASE_SSL: "false"
+    env_file:
+      - path: backend/node/.env
+        required: false
     volumes:
-      - ./frontend/templates-njk:/frontend/templates-njk:ro
-      - ./frontend/static:/frontend/static:ro
+      # Caile din imagine repeta structura repo-ului (/app = harness/), deci
+      # montarile trebuie sa tinteasca /app/frontend, nu /frontend — altfel
+      # containerul foloseste copia din imagine si editarile nu se vad.
+      - ./frontend/templates-njk:/app/frontend/templates-njk:ro
+      - ./frontend/static:/app/frontend/static:ro
       - libra_workspaces:/app/workspaces
     restart: unless-stopped
 
