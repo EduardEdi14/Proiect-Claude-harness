@@ -8,7 +8,7 @@
   <nav class="nav">
     <a class="nav-item{% if nav == 'acasa' %} is-active{% endif %}" href="/acasa" data-i18n="nav-home">Acasă</a>
     <a class="nav-item{% if nav == 'proiectele-mele' %} is-active{% endif %}" href="/proiectele-mele" data-i18n="nav-projects">Proiectele mele</a>
-    <a class="nav-cta" href="/proiect-nou"><span class="plus">＋</span><span data-i18n="nav-new">Proiect nou</span></a>
+    <a class="nav-cta{% if nav == 'proiect-nou' %} is-active{% endif %}" href="/proiect-nou"><span class="plus">＋</span><span data-i18n="nav-new">Proiect nou</span></a>
     <a class="nav-item{% if nav == 'ajutor' %} is-active{% endif %}" href="/ajutor" data-i18n="nav-help">Ajutor</a>
   </nav>
 
