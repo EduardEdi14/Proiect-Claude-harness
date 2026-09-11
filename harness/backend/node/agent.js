@@ -248,11 +248,9 @@ Raspunzi DOAR cu HTML-ul. Fara explicatii, fara blocuri de cod cu \`\`\`.`;
  * Genereaza pagina. Streaming, pentru ca un HTML complet poate fi lung si
  * o cerere obisnuita ar risca sa depaseasca timeout-ul HTTP.
  */
-async function construieste({ nume, descriere, skill }) {
-  // Sablonul ales in discutie ajunge aici cu descrierea lui din SKILL.md, ca
-  // generarea sa urmeze acelasi ghid pe care il foloseste si runner-ul.
+async function construieste({ nume, descriere, skill, imagini }) {
   const sablon = cunostinte.catalog().find(s => s.id === skill);
-  const prompt = [
+  const textPrompt = [
     `Nume proiect: ${nume}`,
     `Sablon: ${sablon ? sablon.id : 'info-page'}`,
     sablon ? `Ce inseamna sablonul asta: ${sablon.descriere}` : '',
@@ -260,20 +258,30 @@ async function construieste({ nume, descriere, skill }) {
     '',
     'Ce trebuie sa contina pagina:',
     descriere,
+    imagini && imagini.length > 0
+      ? '\nUtilizatorul a atașat imagini de referință — urmărește structura, layout-ul și elementele vizuale din ele.'
+      : '',
   ].filter(Boolean).join('\n');
+
+  const content = [];
+  if (imagini && imagini.length > 0) {
+    imagini.forEach(img => content.push({
+      type: 'image',
+      source: { type: 'base64', media_type: img.mediaType, data: img.data },
+    }));
+  }
+  content.push({ type: 'text', text: textPrompt });
 
   const stream = getClient().messages.stream({
     model: DEPLOYMENT,
     max_tokens: 16000,
     system: [{ type: 'text', text: SISTEM_CONSTRUIRE, cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content }],
   });
 
   const r = await stream.finalMessage();
   let html = r.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
 
-  // Modelul respecta de obicei instructiunea, dar daca totusi imbraca
-  // raspunsul in ```html ... ```, scoatem gardul ca sa nu ajunga in pagina.
   const gard = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
   if (gard) html = gard[1].trim();
 
@@ -309,21 +317,33 @@ Fără explicații, fără blocuri de cod cu \`\`\`.`;
  * @param {string} mesaj      - Ce doreste utilizatorul sa schimbe.
  * @param {string} htmlCurent - Continutul HTML curent al paginii.
  */
-async function modifica(mesaj, htmlCurent) {
-  const prompt = [
+async function modifica(mesaj, htmlCurent, imagini) {
+  const textPrompt = [
     'Pagina HTML curentă:',
     '',
     htmlCurent,
     '',
     'Mesajul utilizatorului:',
     mesaj,
-  ].join('\n');
+    imagini && imagini.length > 0
+      ? '\nUtilizatorul a atașat imagini de referință — ține cont de ele la modificare.'
+      : '',
+  ].filter(Boolean).join('\n');
+
+  const content = [];
+  if (imagini && imagini.length > 0) {
+    imagini.forEach(img => content.push({
+      type: 'image',
+      source: { type: 'base64', media_type: img.mediaType, data: img.data },
+    }));
+  }
+  content.push({ type: 'text', text: textPrompt });
 
   const stream = getClient().messages.stream({
     model:      DEPLOYMENT,
     max_tokens: 16000,
     system: [{ type: 'text', text: SISTEM_MODIFICA, cache_control: { type: 'ephemeral' } }],
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content }],
   });
 
   const r = await stream.finalMessage();
