@@ -827,6 +827,22 @@
   });
   sendBtn.addEventListener("click", doSend);
 
+  // Cardurile de sablon pre-completeaza inputul cu promptul de exemplu.
+  Array.prototype.forEach.call(document.querySelectorAll(".ab-card"), function (card) {
+    card.addEventListener("click", function () {
+      var tpl = card.getAttribute("data-tpl");
+      if (!tpl) return;
+      Array.prototype.forEach.call(document.querySelectorAll(".ab-card"), function (c) {
+        c.classList.remove("is-selected");
+      });
+      card.classList.add("is-selected");
+      input.value = tpl;
+      resize();
+      syncSend();
+      input.focus();
+    });
+  });
+
   // ── Handoff ───────────────────────────────────────────────────────────
   if (handoffBtn) {
     handoffBtn.addEventListener("click", function () {
