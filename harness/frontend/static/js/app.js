@@ -886,14 +886,117 @@
   if (!container) return;
 
   var list        = document.getElementById("cs-messages");
+  var scrollWrap  = container.querySelector(".ab-split-scroll");
   var input       = document.getElementById("cs-input");
   var sendBtn     = document.getElementById("cs-send");
   var iframeEl    = document.getElementById("cs-iframe");
   var placeholder = document.getElementById("cs-placeholder");
   var actionsEl   = document.getElementById("cs-preview-actions");
   var handoffBtn  = document.getElementById("cs-handoff-btn");
+  var attachBtn   = document.getElementById("cs-attach-btn");
+  var fileInput   = document.getElementById("cs-file-input");
+  var attachList  = document.getElementById("cs-attach-list");
 
   if (!list || !input || !sendBtn) return;
+
+  // ── Fișiere atașate ───────────────────────────────────────────────────
+  var attachedFiles = []; // [{ filename, text }]
+
+  // Tipuri citite direct în browser (text), vs tipuri care necesită server (binar)
+  var TEXT_EXTS   = ["txt", "csv", "md", "log", "json"];
+  var SERVER_EXTS = ["docx", "xlsx", "xls"];
+
+  function fileIcon(name) {
+    var e = (name.split(".").pop() || "").toLowerCase();
+    if (e === "csv" || e === "xlsx" || e === "xls") return "📊";
+    if (e === "docx" || e === "doc")               return "📝";
+    if (e === "json")                               return "🗂️";
+    return "📄";
+  }
+
+  function addChip(filename, text) {
+    var idx = attachedFiles.push({ filename: filename, text: text }) - 1;
+    var chip = document.createElement("div");
+    chip.className = "ab-file-chip";
+    chip.innerHTML =
+      "<span class='ab-file-chip-icon'>" + fileIcon(filename) + "</span>" +
+      "<span class='ab-file-chip-name'>" + esc(filename) + "</span>" +
+      "<button class='ab-file-chip-remove' type='button' aria-label='Elimină'>✕</button>";
+    chip.querySelector(".ab-file-chip-remove").addEventListener("click", function () {
+      attachedFiles.splice(idx, 1);
+      chip.remove();
+      if (!attachList.children.length) attachList.hidden = true;
+      syncSend();
+    });
+    attachList.hidden = false;
+    attachList.appendChild(chip);
+    syncSend();
+  }
+
+  function showLoadingChip(filename) {
+    var chip = document.createElement("div");
+    chip.className = "ab-file-chip is-loading";
+    chip.innerHTML =
+      "<span class='ab-file-chip-icon'>📎</span>" +
+      "<span class='ab-file-chip-name'>" + esc(filename) + "</span>" +
+      "<span class='ab-chip-loading'>se procesează…</span>";
+    attachList.hidden = false;
+    attachList.appendChild(chip);
+    return chip;
+  }
+
+  if (attachBtn && fileInput) {
+    attachBtn.addEventListener("click", function () { fileInput.click(); });
+
+    fileInput.addEventListener("change", async function () {
+      var file = fileInput.files[0];
+      fileInput.value = "";
+      if (!file) return;
+
+      var ext = (file.name.split(".").pop() || "").toLowerCase();
+
+      // ── Fișiere text: citite direct în browser, fără request la server ──
+      if (TEXT_EXTS.includes(ext)) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          var text = e.target.result || "";
+          if (text.length > 60000) text = text.slice(0, 60000) + "\n\n[... trunchiat]";
+          addChip(file.name, text);
+        };
+        reader.onerror = function () {
+          addVera("Nu am putut citi fișierul.");
+        };
+        reader.readAsText(file, "utf-8");
+        return;
+      }
+
+      // ── Fișiere binare (DOCX, XLSX): server extrage textul ──
+      if (!SERVER_EXTS.includes(ext)) {
+        addVera("Tip nesuportat. Poți atașa: .txt .csv .docx .xlsx .json .md");
+        return;
+      }
+
+      var loadingChip = showLoadingChip(file.name);
+      try {
+        var fd = new FormData();
+        fd.append("fisier", file);
+        var r  = await fetch("/asistent/fisier", { method: "POST", body: fd });
+        var d  = await r.json();
+        loadingChip.remove();
+        if (!attachList.children.length) attachList.hidden = true;
+
+        if (!r.ok) {
+          addVera(esc(d.eroare || "Nu am putut procesa fișierul."));
+          return;
+        }
+        addChip(d.filename, d.text);
+      } catch (err) {
+        loadingChip.remove();
+        if (!attachList.children.length) attachList.hidden = true;
+        addVera("Eroare la încărcarea fișierului. Încearcă din nou.");
+      }
+    });
+  }
 
   var initials    = container.getAttribute("data-initials") || "EU";
   var skill       = container.getAttribute("data-skill")    || "";
@@ -973,7 +1076,7 @@
   }
 
   function syncSend() {
-    sendBtn.disabled = busy || input.value.trim().length === 0;
+    sendBtn.disabled = busy || (input.value.trim().length === 0 && attachedFiles.length === 0);
   }
 
   input.addEventListener("input", function () { resize(); syncSend(); });
@@ -1016,8 +1119,11 @@
 
   // ── Trimitere mesaj ───────────────────────────────────────────────────
   function doSend() {
-    var text = input.value.trim();
-    if (!text || busy) return;
+    var userText = input.value.trim();
+    if ((!userText && attachedFiles.length === 0) || busy) return;
+
+    // Construim mesajul complet: fișiere + textul utilizatorului
+    var fullText = buildMessage(userText);
 
     // La primul mesaj: afișăm zona de chat și ascundem galeria
     if (firstBuild) {
@@ -1027,34 +1133,55 @@
       if (gallery)      gallery.hidden      = true;
     }
 
-    addUser(text);
+    // În chat afișăm doar textul utilizatorului (fără conținut raw al fișierelor)
+    var displayText = userText || attachedFiles.map(function(f) { return "📎 " + f.filename; }).join(", ");
+    if (attachedFiles.length && userText) {
+      displayText = attachedFiles.map(function(f) { return "📎 " + f.filename; }).join(", ") + " · " + userText;
+    }
+    addUser(displayText);
+
+    // Curățăm input-ul și fișierele atașate
     input.value = "";
+    attachedFiles = [];
+    if (attachList) { attachList.innerHTML = ""; attachList.hidden = true; }
     resize();
     syncSend();
 
     if (firstBuild) {
-      doBuild(text);
+      doBuild(fullText, displayText);
     } else {
-      doModifica(text);
+      doModifica(fullText, displayText);
     }
   }
 
+  // Construieste mesajul complet cu contextul din fisiere atasat
+  function buildMessage(userText) {
+    if (!attachedFiles.length) return userText;
+    var parts = attachedFiles.map(function(f) {
+      return "[Fișier atașat: " + f.filename + "]\n\n" + f.text;
+    });
+    var context = parts.join("\n\n---\n\n");
+    if (userText) return context + "\n\n---\n\nCererea mea: " + userText;
+    return context;
+  }
+
   // ── Prima construire ──────────────────────────────────────────────────
-  async function doBuild(text) {
+  async function doBuild(text, displayText) {
     busy = true;
     syncSend();
     showTyping();
 
-    // Derivam un nume scurt din primele cuvinte ale mesajului.
-    var words = text.split(/\s+/).slice(0, 6).join(" ");
-    var name  = (words.length < text.length ? words.trimEnd() + "…" : words).slice(0, 80);
+    // Derivam un nume scurt din textul afișat (fără conținut fișiere)
+    var src   = displayText || text;
+    var words = src.split(/\s+/).slice(0, 6).join(" ");
+    var name  = (words.length < src.length ? words.trimEnd() + "…" : words).slice(0, 80);
     if (name.length < 3) name = "Pagina mea";
 
     try {
       var r = await fetch("/asistent/construieste", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nume: name, descriere: text, skill: skill }),
+        body: JSON.stringify({ nume: name, descriere: text, display_text: displayText, skill: skill }),
       });
       removeTyping();
       var d = await r.json();
@@ -1081,7 +1208,7 @@
   }
 
   // ── Modificare ────────────────────────────────────────────────────────
-  async function doModifica(text) {
+  async function doModifica(text, displayText) {
     busy = true;
     syncSend();
     showTyping();
@@ -1091,9 +1218,10 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mesaj:       text,
-          html_curent: currentHtml,
-          proiect_id:  currentProjId,
+          mesaj:        text,
+          display_text: displayText,
+          html_curent:  currentHtml,
+          proiect_id:   currentProjId,
         }),
       });
       removeTyping();
@@ -1173,7 +1301,10 @@
     typingEl = null;
   }
 
-  function scrollDown() { list.scrollTop = list.scrollHeight; }
+  function scrollDown() {
+    var el = scrollWrap || list;
+    el.scrollTop = el.scrollHeight;
+  }
 
   function veraAvatar() {
     return "<div class='lm-mark' style='width:16px;height:16px'>" +

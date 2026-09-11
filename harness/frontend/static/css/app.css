@@ -208,7 +208,7 @@ a{color:var(--link);text-decoration:none}
 .topbar{
   display:flex;align-items:center;gap:18px;padding:18px var(--gutter);
   background:var(--surface);border-bottom:1px solid var(--line);
-  position:sticky;top:0;z-index:5;
+  position:sticky;top:0;z-index:5;flex-shrink:0;
 }
 .search{
   flex:1;max-width:420px;padding:11px 16px;border-radius:12px;background:var(--neutral);border:none;
@@ -1388,6 +1388,21 @@ a{color:var(--link);text-decoration:none}
    Builder split-pane — embed în app-shell (sidebar rămâne vizibil)
    ========================================================================== */
 
+/* ── Pagina de builder ocupă exact viewport-ul — fără scrollbar extern ── */
+.app-shell--builder{
+  height:100vh;
+  overflow:hidden;
+}
+.app-shell--builder .main{
+  height:100vh;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.app-shell--builder .content{
+  flex:1;min-height:0;overflow:hidden;padding:0;
+  display:flex;flex-direction:column;
+}
+
 /* Resetăm padding-ul content--ab ca să nu dublăm spațierea */
 .content--ab{padding:0}
 .content-inner--builder{
@@ -1397,11 +1412,25 @@ a{color:var(--link);text-decoration:none}
 /* Rădăcina split-ului ocupă tot spațiul disponibil în content */
 .ab-split-root{
   display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
+  background:var(--bg);
 }
 
-/* Coloana stângă — scrollabilă */
+/* Coloana stângă — flex column, overflow hidden; scroll e în .ab-split-scroll */
 .ab-split-left{
-  flex:1;overflow-y:auto;display:flex;flex-direction:column;
+  flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;
+  background:var(--bg);
+}
+/* Zona scrollabilă (header + mesaje + galerie) */
+.ab-split-scroll{
+  flex:1;overflow-y:auto;min-height:0;
+  background:var(--bg);
+}
+/* Dock input fix la baza panoului stâng */
+.ab-input-dock{
+  flex-shrink:0;
+  border-top:1px solid var(--line-soft);
+  background:var(--surface);
+  padding:10px 20px 14px;
 }
 
 /* Container interior centrat */
@@ -1415,9 +1444,9 @@ a{color:var(--link);text-decoration:none}
   margin:3px 0 0;font:400 13px var(--font);color:var(--muted);
 }
 
-/* Mesajele ocupă tot spațiul disponibil în panoul stâng când e split */
+/* În builder, mesajele cresc liber — scroll îl face .ab-split-scroll */
 .ab-split-root .ab-messages{
-  max-height:none;flex:1;
+  max-height:none;overflow:visible;
 }
 
 /* ── Modul split (activ după prima generare) ────────────────────────── */
@@ -1514,3 +1543,40 @@ a{color:var(--link);text-decoration:none}
 }
 .btn--danger:hover{background:#a81020;border-color:#a81020}
 .btn--md{padding:0 18px;height:38px;font-size:14px}
+
+/* ==========================================================================
+   Atașare fișiere — chip-uri deasupra barei de input
+   ========================================================================== */
+.ab-plus{
+  /* transformam span-ul în buton real — stilul existent se pastreaza */
+  cursor:pointer;background:none;border:none;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.ab-plus:hover{color:var(--red)}
+
+.ab-attach-list{
+  display:flex;flex-wrap:wrap;gap:6px;
+  padding:6px 12px 2px;
+}
+
+.ab-file-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px 4px 8px;
+  border-radius:20px;
+  background:var(--tint-2);border:1px solid rgba(194,24,47,.2);
+  font:500 12px var(--font);color:var(--ink);
+  max-width:220px;
+  animation:bubble-in .15s ease;
+}
+.ab-file-chip.is-loading{opacity:.6}
+.ab-file-chip-icon{font-size:13px;flex-shrink:0}
+.ab-file-chip-name{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;
+}
+.ab-file-chip-remove{
+  flex-shrink:0;background:none;border:none;cursor:pointer;padding:0;
+  color:var(--muted);font-size:14px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.ab-file-chip-remove:hover{color:var(--red)}
+.ab-chip-loading{font:400 11px var(--font);color:var(--muted);animation:typing-bounce .85s ease-in-out infinite}

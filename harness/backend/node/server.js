@@ -9,11 +9,18 @@ const path    = require('path');
 const express = require('express');
 const session = require('express-session');
 const bcrypt  = require('bcryptjs');
+const multer  = require('multer');
 const nunjucks = require('nunjucks');
 
 const { STATUS, TOOLS, toolByID, Store } = require('./store');
 const { MemoryStore }                     = require('./store-memory');
 const agent                               = require('./agent');
+
+// Multer: fisiere in memorie, max 10 MB
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits:  { fileSize: 10 * 1024 * 1024 },
+});
 
 // ---------- app ----------
 
@@ -413,8 +420,9 @@ app.post('/asistent/construieste', auth(async (req, res, next) => {
     // container. De acolo poate fi reluata si trimisa echipei de dezvoltare.
     const p = await store.createBuilt(req.user.id, skill, nume, descriere, durata);
     agent.salveazaPagina(p.workspacePath, r.html, { nume, descriere, skill });
+    const displayText = req.body.display_text || descriere;
     agent.salveazaChat(p.workspacePath, [
-      { role: 'user', text: descriere },
+      { role: 'user', text: displayText },
       { role: 'vera', text: 'Gata! Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva — culori, texte, structură.' },
     ]);
 
@@ -448,7 +456,8 @@ app.post('/asistent/modifica', auth(async (req, res, next) => {
             skill:     p.skillID,
           });
           const chat = agent.citesteChat(p.workspacePath);
-          chat.push({ role: 'user', text: mesaj });
+          const displayTextModif = req.body.display_text || mesaj;
+          chat.push({ role: 'user', text: displayTextModif });
           chat.push({ role: 'vera', text: r.raspuns || 'Am aplicat modificările. Cum arată acum?' });
           agent.salveazaChat(p.workspacePath, chat);
         }
@@ -503,6 +512,53 @@ app.post('/asistent/reset', auth((req, res) => {
   req.session.chat = [];
   return res.json({ ok: true });
 }));
+
+// POST /asistent/fisier — incarca un fisier si extrage textul din el
+// multer ruleaza INAINTE de auth (are nevoie de req.file inainte de handler)
+app.post('/asistent/fisier',
+  upload.single('fisier'),
+  auth(async (req, res, next) => {
+    try {
+      const file = req.file;
+      if (!file) return res.status(400).json({ eroare: 'Niciun fișier primit.' });
+
+      const ext = path.extname(file.originalname).toLowerCase();
+      const MAX = 60_000;
+      let text  = '';
+
+      if (['.txt', '.csv', '.md', '.log'].includes(ext)) {
+        text = file.buffer.toString('utf8');
+
+      } else if (ext === '.json') {
+        try { text = JSON.stringify(JSON.parse(file.buffer.toString('utf8')), null, 2); }
+        catch { text = file.buffer.toString('utf8'); }
+
+      } else if (ext === '.docx') {
+        const mammoth = require('mammoth');
+        const result  = await mammoth.extractRawText({ buffer: file.buffer });
+        text = result.value;
+
+      } else if (['.xlsx', '.xls'].includes(ext)) {
+        const XLSX = require('xlsx');
+        const wb   = XLSX.read(file.buffer, { type: 'buffer' });
+        text = wb.SheetNames.map(n => {
+          return `=== ${n} ===\n` + XLSX.utils.sheet_to_csv(wb.Sheets[n]);
+        }).join('\n\n');
+
+      } else {
+        return res.status(400).json({
+          eroare: 'Tip nesuportat. Fișierele acceptate: .txt .csv .docx .xlsx .json .md',
+        });
+      }
+
+      if (text.length > MAX) {
+        text = text.slice(0, MAX) + '\n\n[... conținut trunchiat la ' + MAX + ' caractere]';
+      }
+
+      return res.json({ text, filename: file.originalname, size: file.size });
+    } catch (err) { next(err); }
+  })
+);
 
 // POST /proiect/:id/handoff — preda proiectul echipei Dev
 app.post('/proiect/:id/handoff', auth(async (req, res) => {

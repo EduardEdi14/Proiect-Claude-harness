@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
 {% block body %}
-<div class="app-shell">
+<div class="app-shell app-shell--builder">
   {% include "partials/sidebar.html" %}
   <div class="main">
     {% include "partials/topbar.html" %}
@@ -14,36 +14,73 @@
              {% if projectID %}data-project-id="{{ projectID }}"{% endif %}
              {% if initialHtml %}data-resume="1"{% endif %}>
 
-          {# ── Stânga: chat + input + galerie ── #}
+          {# ── Stânga: scroll sus + input fix jos ── #}
           <div class="ab-split-left">
 
-            <div class="ab-split-inner">
+            {# Zona scrollabilă: header + mesaje + galerie #}
+            <div class="ab-split-scroll">
+              <div class="ab-split-inner">
 
-              {# Header Vera #}
-              <div class="ab-header">
-                <div class="ab-brand">
-                  <div class="lm-mark" aria-hidden="true">
-                    <div class="lm-a1"></div>
-                    <div class="lm-row"><div class="lm-a2"></div><div class="lm-a3"></div></div>
-                  </div>
-                  <div>
-                    <h1 class="ab-title"><span data-i18n="builder-t1">Construiești</span> <span class="ab-title-dim" data-i18n="builder-t2">pagina ta</span></h1>
-                    {% if configurat %}
-                    <p class="ab-subtitle">{{ agentNume }} te ajută &middot; {{ model }}</p>
-                    {% endif %}
+                {# Header Vera #}
+                <div class="ab-header">
+                  <div class="ab-brand">
+                    <div class="lm-mark" aria-hidden="true">
+                      <div class="lm-a1"></div>
+                      <div class="lm-row"><div class="lm-a2"></div><div class="lm-a3"></div></div>
+                    </div>
+                    <div>
+                      <h1 class="ab-title"><span data-i18n="builder-t1">Construiești</span> <span class="ab-title-dim" data-i18n="builder-t2">pagina ta</span></h1>
+                      {% if configurat %}
+                      <p class="ab-subtitle">{{ agentNume }} te ajută &middot; {{ model }}</p>
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {# Zona de mesaje (apare după primul send) #}
-              <div id="cs-messages-wrap" hidden>
-                <div class="ab-messages" id="cs-messages" role="log" aria-live="polite"></div>
-              </div>
+                {# Zona de mesaje (apare după primul send) #}
+                <div id="cs-messages-wrap" hidden>
+                  <div class="ab-messages" id="cs-messages" role="log" aria-live="polite"></div>
+                </div>
 
-              {# Bara de input #}
+                {# Galerie șabloane (dispare după prima generare) #}
+                <div id="ab-gallery">
+                  <div class="ab-tabs">
+                    <button class="ab-tab is-active" type="button" data-i18n="tab-templates">Șabloane</button>
+                  </div>
+                  <div class="ab-panel ab-panel--gallery" id="ab-tab-sabloane">
+                    <div class="ab-grid">
+                      {% for t in tools %}
+                      <button class="ab-card{% if tool and tool.id == t.id %} is-selected{% endif %}"
+                              type="button"
+                              data-skill="{{ t.id }}"
+                              data-tpl="{{ t.examplePrompt }}">
+                        <span class="ab-card-icon">{{ t.icon }}</span>
+                        <span class="ab-card-body">
+                          <span class="ab-card-name" data-i18n="tool-{{ t.id }}-name">{{ t.name }}</span>
+                          <span class="ab-card-desc" data-i18n="tool-{{ t.id }}-desc">{{ t.desc }}</span>
+                        </span>
+                      </button>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {# Bara de input — fixată jos, nu se mișcă la scroll #}
+            <div class="ab-input-dock">
               <div class="ab-input-wrap">
+                {# Fișiere atașate #}
+                <div id="cs-attach-list" class="ab-attach-list" hidden></div>
+
                 <div class="ab-bar">
-                  <span class="ab-plus" aria-hidden="true">＋</span>
+                  <button id="cs-attach-btn" class="ab-plus" type="button"
+                          title="Atașează fișier (.txt .csv .docx .xlsx .json)"
+                          aria-label="Atașează fișier">＋</button>
+                  <input id="cs-file-input" type="file"
+                         accept=".txt,.csv,.md,.json,.docx,.xlsx,.xls,.log"
+                         hidden aria-hidden="true">
                   <textarea
                     id="cs-input"
                     class="ab-textarea"
@@ -60,31 +97,8 @@
                 </div>
                 <p class="ab-hint" data-i18n="input-hint">Enter trimite · Shift+Enter rând nou</p>
               </div>
-
-              {# Galerie șabloane (dispare după prima generare) #}
-              <div id="ab-gallery">
-                <div class="ab-tabs">
-                  <button class="ab-tab is-active" type="button" data-i18n="tab-templates">Șabloane</button>
-                </div>
-                <div class="ab-panel ab-panel--gallery" id="ab-tab-sabloane">
-                  <div class="ab-grid">
-                    {% for t in tools %}
-                    <button class="ab-card{% if tool and tool.id == t.id %} is-selected{% endif %}"
-                            type="button"
-                            data-skill="{{ t.id }}"
-                            data-tpl="{{ t.examplePrompt }}">
-                      <span class="ab-card-icon">{{ t.icon }}</span>
-                      <span class="ab-card-body">
-                        <span class="ab-card-name" data-i18n="tool-{{ t.id }}-name">{{ t.name }}</span>
-                        <span class="ab-card-desc" data-i18n="tool-{{ t.id }}-desc">{{ t.desc }}</span>
-                      </span>
-                    </button>
-                    {% endfor %}
-                  </div>
-                </div>
-              </div>
-
             </div>
+
           </div>
 
           {# ── Dreapta: previzualizare (hidden inițial) ── #}
