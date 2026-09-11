@@ -6,23 +6,37 @@
   </a>
 
   <nav class="nav">
-    <a class="nav-item{% if nav == 'acasa' %} is-active{% endif %}" href="/acasa">Acasă</a>
-    <a class="nav-item{% if nav == 'proiectele-mele' %} is-active{% endif %}" href="/proiectele-mele">Proiectele mele</a>
-    <a class="nav-cta" href="/proiect-nou"><span class="plus">＋</span>Proiect nou</a>
-    <a class="nav-item{% if nav == 'ajutor' %} is-active{% endif %}" href="/ajutor">Ajutor</a>
+    <a class="nav-item{% if nav == 'acasa' %} is-active{% endif %}" href="/acasa" data-i18n="nav-home">Acasă</a>
+    <a class="nav-item{% if nav == 'proiectele-mele' %} is-active{% endif %}" href="/proiectele-mele" data-i18n="nav-projects">Proiectele mele</a>
+    <a class="nav-cta" href="/proiect-nou"><span class="plus">＋</span><span data-i18n="nav-new">Proiect nou</span></a>
+    <a class="nav-item{% if nav == 'ajutor' %} is-active{% endif %}" href="/ajutor" data-i18n="nav-help">Ajutor</a>
   </nav>
 
   <div class="side-foot">
     {% if sidebarFoot == 'promo' %}
     <div class="side-card">
-      <div class="side-card-title">Ai o idee de pagină?</div>
-      <div class="side-card-text">Durează sub un minut să o pornești.</div>
-      <a class="side-card-btn" href="/proiect-nou">Start proiect nou</a>
+      <div class="side-card-title" data-i18n="promo-title">Ai o idee de pagină?</div>
+      <div class="side-card-text" data-i18n="promo-text">Durează sub un minut să o pornești.</div>
+      <a class="side-card-btn" href="/proiect-nou" data-i18n="promo-btn">Start proiect nou</a>
     </div>
     {% elif sidebarFoot == 'restricted' %}
     <div class="side-badge">
       <div class="side-badge-head"><span class="lock"></span><span>MOD RESTRICȚIONAT</span></div>
       <div class="side-badge-text">Doar cele 2 instrumente aprobate. Fără acces la fișiere, rețea sau alte proiecte.</div>
+    </div>
+    {% elif sidebarFoot == 'lastaction' %}
+    <div class="side-last">
+      <div class="side-last-head" data-i18n="last-head">Ultima acțiune</div>
+      {% if lastProject %}
+      <div class="side-last-name">{{ lastProject.name }}</div>
+      <div class="side-last-meta">
+        <span class="side-last-status" data-i18n="status-{{ lastProject.statusKey }}">{{ lastProject.statusLabel }}</span>
+        <span class="side-last-dot">·</span>
+        <span>{{ lastProject.timeAgo }}</span>
+      </div>
+      {% else %}
+      <div class="side-last-empty" data-i18n="last-empty">Niciun proiect creat încă.</div>
+      {% endif %}
     </div>
     {% endif %}
   </div>

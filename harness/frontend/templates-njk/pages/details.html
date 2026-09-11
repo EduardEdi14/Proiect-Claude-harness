@@ -27,7 +27,7 @@
                     <div class="lm-row"><div class="lm-a2"></div><div class="lm-a3"></div></div>
                   </div>
                   <div>
-                    <h1 class="ab-title">Construiești <span class="ab-title-dim">pagina ta</span></h1>
+                    <h1 class="ab-title"><span data-i18n="builder-t1">Construiești</span> <span class="ab-title-dim" data-i18n="builder-t2">pagina ta</span></h1>
                     {% if configurat %}
                     <p class="ab-subtitle">{{ agentNume }} te ajută &middot; {{ model }}</p>
                     {% endif %}
@@ -49,6 +49,7 @@
                     class="ab-textarea"
                     rows="1"
                     placeholder="Descrie pagina pe care o vrei..."
+                    data-i18n-ph="input-ph"
                     maxlength="2000"
                     aria-label="Mesaj pentru Vera"></textarea>
                   <button id="cs-send" class="ab-send" type="button" disabled aria-label="Trimite">
@@ -57,13 +58,13 @@
                     </svg>
                   </button>
                 </div>
-                <p class="ab-hint">Enter trimite &middot; Shift+Enter rând nou</p>
+                <p class="ab-hint" data-i18n="input-hint">Enter trimite · Shift+Enter rând nou</p>
               </div>
 
               {# Galerie șabloane (dispare după prima generare) #}
               <div id="ab-gallery">
                 <div class="ab-tabs">
-                  <button class="ab-tab is-active" type="button">Șabloane</button>
+                  <button class="ab-tab is-active" type="button" data-i18n="tab-templates">Șabloane</button>
                 </div>
                 <div class="ab-panel ab-panel--gallery" id="ab-tab-sabloane">
                   <div class="ab-grid">
@@ -74,8 +75,8 @@
                             data-tpl="{{ t.examplePrompt }}">
                       <span class="ab-card-icon">{{ t.icon }}</span>
                       <span class="ab-card-body">
-                        <span class="ab-card-name">{{ t.name }}</span>
-                        <span class="ab-card-desc">{{ t.desc }}</span>
+                        <span class="ab-card-name" data-i18n="tool-{{ t.id }}-name">{{ t.name }}</span>
+                        <span class="ab-card-desc" data-i18n="tool-{{ t.id }}-desc">{{ t.desc }}</span>
                       </span>
                     </button>
                     {% endfor %}
@@ -89,12 +90,12 @@
           {# ── Dreapta: previzualizare (hidden inițial) ── #}
           <div class="ab-split-right" id="cs-right" hidden>
             <div class="ab-pv-head">
-              <span class="ab-pv-label">Previzualizare</span>
+              <span class="ab-pv-label" data-i18n="preview-label">Previzualizare</span>
               <div class="ab-pv-actions" id="cs-preview-actions" hidden>
-                <button class="btn btn--primary btn--sm" id="cs-handoff-btn" type="button">
+                <button class="btn btn--primary btn--sm" id="cs-handoff-btn" type="button" data-i18n="handoff-btn">
                   Trimite la echipa Dev
                 </button>
-                <a class="btn btn--ghost btn--sm" href="/acasa">← Acasă</a>
+                <a class="btn btn--ghost btn--sm" href="/acasa" data-i18n="back-home">← Acasă</a>
               </div>
             </div>
             <div class="ab-pv-body">

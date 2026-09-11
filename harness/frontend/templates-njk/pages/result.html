@@ -8,8 +8,8 @@
       <div class="result-head">
         <div class="check-badge">✓</div>
         <div>
-          <h1 class="title">Pagina ta e pregătită</h1>
-          <div class="subtitle">Aruncă un ochi. Dacă arată bine, o trimiți echipei de dezvoltare.</div>
+          <h1 class="title" data-i18n="result-title">Pagina ta e pregătită</h1>
+          <div class="subtitle" data-i18n="result-sub">Aruncă un ochi. Dacă arată bine, o trimiți echipei de dezvoltare.</div>
         </div>
       </div>
 
@@ -40,24 +40,24 @@
 
       <div class="btn-row">
         <button class="btn btn--primary btn--lg" type="button"
-                hx-post="/proiect/{{ project.id }}/handoff" hx-swap="none">Trimite la echipa Dev</button>
-        <a class="btn btn--ghost btn--lg" href="/proiect/{{ project.id }}/detalii">Mai schimb ceva</a>
-        <a class="btn btn--link" href="/acasa">↩ Acasă</a>
+                hx-post="/proiect/{{ project.id }}/handoff" hx-swap="none" data-i18n="result-send">Trimite la echipa Dev</button>
+        <a class="btn btn--ghost btn--lg" href="/proiect/{{ project.id }}/detalii" data-i18n="result-edit">Mai schimb ceva</a>
+        <a class="btn btn--link" href="/acasa" data-i18n="result-home">↩ Acasă</a>
       </div>
 
-      <div class="note">Proiectul rămâne salvat ca ciornă — îl reiei de pe pagina Acasă.</div>
+      <div class="note" data-i18n="result-note">Proiectul rămâne salvat ca ciornă — îl reiei de pe pagina Acasă.</div>
 
     </div>
   </main>
 
   <aside class="side-panel">
     <div class="side-panel-mark">{% include "partials/mark-lg.html" %}</div>
-    <div class="side-panel-title">Nimic nu se publică singur</div>
-    <div class="side-panel-text">Echipa de dezvoltare primește codul, îl revizuiește și îl publică pe intranet. Primești o notificare când e live.</div>
+    <div class="side-panel-title" data-i18n="side-panel-title">Nimic nu se publică singur</div>
+    <div class="side-panel-text" data-i18n="side-panel-text">Echipa de dezvoltare primește codul, îl revizuiește și îl publică pe intranet. Primești o notificare când e live.</div>
     <div class="side-panel-list">
-      <div class="side-step is-current"><span class="n">1</span>Trimiți proiectul</div>
-      <div class="side-step"><span class="n">2</span>Dev revizuiește</div>
-      <div class="side-step"><span class="n">3</span>Publicare pe intranet</div>
+      <div class="side-step is-current"><span class="n">1</span><span data-i18n="step-1">Trimiți proiectul</span></div>
+      <div class="side-step"><span class="n">2</span><span data-i18n="step-2">Dev revizuiește</span></div>
+      <div class="side-step"><span class="n">3</span><span data-i18n="step-3">Publicare pe intranet</span></div>
     </div>
   </aside>
 </div>

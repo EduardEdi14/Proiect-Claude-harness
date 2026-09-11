@@ -44,6 +44,38 @@ app.use(session({
 
 // ---------- helpers ----------
 
+function timeAgo(date) {
+  if (!date) return '';
+  const diff = Date.now() - new Date(date).getTime();
+  const min  = Math.floor(diff / 60000);
+  if (min < 1)  return 'acum';
+  if (min < 60) return `acum ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24)   return `acum ${h}h`;
+  const d = Math.floor(h / 24);
+  if (d === 1)  return 'ieri';
+  if (d < 30)   return `acum ${d} zile`;
+  const m = Math.floor(d / 30);
+  if (m < 12)   return `acum ${m} luni`;
+  return `acum ${Math.floor(m / 12)} ani`;
+}
+
+const STATUS_LABEL = {
+  queued:     'În așteptare',
+  running:    'În construcție',
+  draft:      'Ciornă',
+  handed_off: 'La echipa Dev',
+  done:       'Finalizat',
+  failed:     'Eșuat',
+};
+
+function lastProjectInfo(projects) {
+  const p = projects[0] || null;
+  if (!p) return null;
+  const name = p.name.length > 32 ? p.name.slice(0, 32) + '…' : p.name;
+  return { name, statusLabel: STATUS_LABEL[p.status] || p.status, statusKey: p.status.replace('_', '-'), timeAgo: timeAgo(p.updatedAt) };
+}
+
 function hxRedirect(req, res, url) {
   if (req.headers['hx-request']) {
     res.set('HX-Redirect', url);
@@ -194,7 +226,7 @@ app.get('/proiect-nou', auth((req, res) => {
   return res.redirect('/proiect-nou/detalii');
 }));
 
-app.get('/proiect-nou/detalii', auth((req, res) => {
+app.get('/proiect-nou/detalii', auth(async (req, res) => {
   const skillID     = req.query.skill || '';
   let tool          = toolByID(skillID);
   const skillPreset = !!tool;
@@ -204,10 +236,14 @@ app.get('/proiect-nou/detalii', auth((req, res) => {
   // sablonului, cu care pre-completam prima replica din conversatie.
   const preset = typeof req.query.tpl === 'string' ? req.query.tpl.slice(0, 2000) : '';
 
+  const allProjects = await store.projects(req.user.id);
+  const lastProject = lastProjectInfo(allProjects);
+
   return res.render('pages/details.html', {
     title:       'Proiect nou',
     nav:         'proiect-nou',
-    sidebarFoot: 'restricted',
+    sidebarFoot: 'lastaction',
+    lastProject,
     user:        req.user,
     tool,
     tools:       TOOLS,
@@ -266,10 +302,14 @@ app.get('/proiect/:id/detalii', auth(async (req, res) => {
 
   const initialHtml = agent.citestePagina(p.workspacePath) || '';
 
+  const allProjects = await store.projects(req.user.id);
+  const lastProject = lastProjectInfo(allProjects);
+
   return res.render('pages/details.html', {
     title:        p.name,
     nav:          'proiect-nou',
-    sidebarFoot:  'restricted',
+    sidebarFoot:  'lastaction',
+    lastProject,
     user:         req.user,
     tool,
     tools:        TOOLS,
