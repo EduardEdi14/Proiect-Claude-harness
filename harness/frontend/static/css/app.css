@@ -112,6 +112,9 @@
 }
 
 *,*::before,*::after{box-sizing:border-box}
+/* Atributul hidden trebuie sa bata clasele care seteaza display
+   (butoanele au display:inline-flex si altfel raman vizibile). */
+[hidden]{display:none!important}
 html,body{height:100%}
 body{
   margin:0;background:var(--bg);color:var(--ink);
@@ -856,30 +859,23 @@ a{color:var(--link);text-decoration:none}
    trepte (ordinal), nu culori de identitate. Rampa a trecut validatorul
    in ambele teme: L monoton, pas >= 0.06, capat vizibil pe suprafata. */
 .viz{
-  --stage-1:#F08A97;
-  --stage-2:#D2213C;
-  --stage-3:#8E1226;
   --viz-bar:#D2213C;
   --viz-grid:rgba(var(--ink-rgb),.10);
 }
 @media (prefers-color-scheme:dark){
   :root:where(:not([data-theme="light"])) .viz{
-    --stage-1:#B8304A;
-    --stage-2:#E05C72;
-    --stage-3:#F5A3AE;
     --viz-bar:#E05C72;
     --viz-grid:rgba(var(--ink-rgb),.16);
   }
 }
 :root[data-theme="dark"] .viz{
-  --stage-1:#B8304A;
-  --stage-2:#E05C72;
-  --stage-3:#F5A3AE;
   --viz-bar:#E05C72;
   --viz-grid:rgba(var(--ink-rgb),.16);
 }
 
-.viz-row{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:stretch}
+/* Casetele si graficul respira in acelasi ritm ca restul paginii. */
+.viz{display:flex;flex-direction:column;gap:22px}
+.viz-row{display:grid;grid-template-columns:1fr;gap:18px;align-items:stretch}
 .viz-card{
   padding:18px 20px 16px;border-radius:16px;background:var(--surface);
   border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:14px;
@@ -889,9 +885,13 @@ a{color:var(--link);text-decoration:none}
 .viz-sub{font:500 11.5px var(--font);color:var(--muted-2)}
 
 /* ---- coloane: proiecte pornite pe saptamana ---- */
+/* Marca ramane subtire (max 24px), deci pe toata latimea cardului benzile ar
+   ajunge la ~140px si graficul si-ar pierde forma: o bara singura in mult gol.
+   Limitam zona de desen, nu ingrosam bara. */
 .viz-cols{
   display:flex;align-items:flex-end;gap:10px;height:136px;padding-top:18px;
   border-bottom:1px solid var(--viz-grid);
+  max-width:780px;width:100%;
 }
 .col{
   flex:1;position:relative;height:100%;
@@ -917,7 +917,7 @@ a{color:var(--link);text-decoration:none}
   margin-top:7px;font:500 10px var(--font);color:var(--muted-3);
   white-space:nowrap;
 }
-.viz-xaxis{display:flex;gap:10px;margin-top:-2px}
+.viz-xaxis{display:flex;gap:10px;margin-top:-2px;max-width:780px;width:100%}
 .viz-xaxis span{flex:1;text-align:center;font:500 10px var(--font);color:var(--muted-3)}
 
 /* Tooltip la hover, fara JS. */
@@ -929,21 +929,6 @@ a{color:var(--link);text-decoration:none}
 }
 .col:hover .col-tip,.col:focus-within .col-tip{opacity:1}
 
-/* ---- bara stivuita: unde sunt proiectele ---- */
-.viz-stack{
-  display:flex;gap:2px;                       /* 2px de suprafata separa segmentele */
-  height:22px;border-radius:6px;
-}
-.seg{position:relative;min-width:6px;border-radius:3px}
-.seg--1{background:var(--stage-1)}
-.seg--2{background:var(--stage-2)}
-.seg--3{background:var(--stage-3)}
-.seg:hover .col-tip{opacity:1}
-.viz-legend{display:flex;flex-direction:column;gap:9px;margin-top:2px}
-.lg{display:flex;align-items:center;gap:9px;font:500 12px var(--font);color:var(--muted)}
-.lg-dot{width:10px;height:10px;border-radius:3px;flex:none}
-.lg-name{flex:1}
-.lg-num{font:700 12.5px var(--font);color:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ---- stare goala si tabel ---- */
 .viz-empty{
@@ -1059,7 +1044,7 @@ a{color:var(--link);text-decoration:none}
 
 /* ---------- schita din graficele goale ----------
    Coloane fantoma: arata ce va aparea, fara sa pretinda ca sunt date. */
-.viz-ghost{display:flex;align-items:flex-end;gap:10px;height:74px;opacity:.5}
+.viz-ghost{display:flex;align-items:flex-end;gap:10px;height:74px;opacity:.5;max-width:780px;width:100%}
 .viz-ghost i{
   flex:1;max-width:24px;margin:0 auto;border-radius:4px 4px 0 0;
   background:linear-gradient(180deg,var(--line-strong),var(--line-soft));
@@ -1080,3 +1065,430 @@ a{color:var(--link);text-decoration:none}
   .stat-num{font-size:23px}
   .stat-chip{width:34px;height:34px}
 }
+
+/* ---------- asistentul din ecranul de construire ---------- */
+
+/* Cine te ajuta, sub titlu. */
+.ab-who{font:500 12px var(--font);color:var(--muted-2);margin-top:3px}
+
+.as-warn{
+  padding:12px 15px;border-radius:12px;
+  background:var(--badge-draft-bg);color:var(--badge-draft-fg);
+  font:500 12.5px/1.6 var(--font);
+}
+.as-warn code{font:600 11.5px var(--mono)}
+
+/* Consumul, sub fiecare raspuns. */
+.as-usage{
+  margin-top:9px;padding-top:8px;border-top:1px solid var(--line-soft);
+  display:flex;flex-wrap:wrap;gap:4px 12px;
+  font:500 10.5px var(--font);color:var(--muted-2);
+  font-variant-numeric:tabular-nums;
+}
+.as-usage b{font-weight:700;color:var(--muted)}
+
+/* Raspunsurile gata scrise, propuse de asistent. */
+.as-suggest{display:flex;flex-wrap:wrap;gap:8px;padding-left:34px}
+.as-chip{
+  padding:8px 14px;border-radius:999px;cursor:pointer;
+  background:var(--surface);border:1.5px solid var(--line-strong);
+  color:var(--ink);font:600 12px var(--font);
+  transition:background .15s,border-color .15s,transform .12s;
+}
+.as-chip:hover{border-color:var(--red);background:var(--tint);transform:translateY(-1px)}
+.as-chip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.as-chip[disabled]{opacity:.5;cursor:default;transform:none}
+
+.ab-foot{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.as-total{font:600 10.5px var(--font);color:var(--muted-2);font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion:reduce){ .as-chip:hover{transform:none} }
+
+/* Pagina construita, in ecranul de rezultat. */
+.preview-frame{flex:1;width:100%;border:none;background:#fff;min-height:320px}
+
+/* ==========================================================================
+   Chat Split — ecranul full-screen cu chat la stânga și previzualizare la dreapta.
+   Paleta proprie dark, independenta de tema globala a aplicatiei.
+   ========================================================================== */
+
+.chat-split{
+  --cs-bg:#0f0f11;
+  --cs-surface:#1a1a1e;
+  --cs-surface-2:#242428;
+  --cs-border:rgba(255,255,255,.08);
+  --cs-border-strong:rgba(255,255,255,.16);
+  --cs-text:#f0ede9;
+  --cs-muted:rgba(240,237,233,.56);
+  --cs-muted-2:rgba(240,237,233,.36);
+  --cs-user-bg:#c0272d;
+  --cs-vera-bg:#242428;
+  --cs-vera-border:rgba(255,255,255,.07);
+  --cs-input-bg:#1a1a1e;
+  --cs-input-border:rgba(255,255,255,.12);
+  --cs-preview-bg:#101012;
+}
+
+.chat-split{
+  display:flex;height:100vh;overflow:hidden;
+  background:var(--cs-bg);color:var(--cs-text);font-family:var(--font);
+}
+
+/* ── Panoul stânga ─────────────────────────────────────────────────────── */
+.cs-left{
+  width:40%;min-width:300px;max-width:540px;flex:none;
+  display:flex;flex-direction:column;
+  background:var(--cs-bg);border-right:1px solid var(--cs-border);
+  height:100vh;overflow:hidden;
+}
+
+.cs-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 20px;border-bottom:1px solid var(--cs-border);flex:none;
+}
+
+.cs-brand{display:flex;align-items:center;gap:10px}
+
+.cs-brand-chip{
+  width:28px;height:28px;border-radius:8px;flex:none;
+  background:rgba(194,24,47,.25);
+  display:flex;align-items:center;justify-content:center;
+}
+/* Marca devine vizibila pe fundal intunecat */
+.cs-brand-chip .lm-a2{background:rgba(255,255,255,.85)}
+
+.cs-brand-name{font:700 14px var(--font);color:var(--cs-text);letter-spacing:-.01em}
+
+.cs-back-btn{
+  font:500 11.5px var(--font);color:var(--cs-muted);
+  text-decoration:none;padding:6px 12px;
+  border-radius:9px;border:1px solid var(--cs-border);
+  transition:color .15s,border-color .15s;
+}
+.cs-back-btn:hover{color:var(--cs-text);border-color:var(--cs-border-strong)}
+
+/* ── Mesaje ──────────────────────────────────────────────────────────── */
+.cs-messages{
+  flex:1;overflow-y:auto;
+  padding:20px 20px 8px;
+  display:flex;flex-direction:column;gap:14px;
+  scroll-behavior:smooth;
+}
+.cs-messages::-webkit-scrollbar{width:3px}
+.cs-messages::-webkit-scrollbar-track{background:transparent}
+.cs-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px}
+
+/* ── Bule ────────────────────────────────────────────────────────────── */
+.cs-bubble{
+  display:flex;gap:9px;
+  animation:cs-in .22s ease;
+}
+@keyframes cs-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.cs-bubble-vera{align-self:flex-start;max-width:88%}
+.cs-bubble-user{align-self:flex-end;flex-direction:row-reverse;max-width:80%}
+
+.cs-avatar{
+  width:26px;height:26px;border-radius:8px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:2px;
+  background:rgba(194,24,47,.2);
+}
+.cs-avatar-user{
+  background:var(--red);color:#fff;
+  font:700 9.5px var(--font);
+}
+
+.cs-body{
+  padding:10px 14px;
+  font:400 13.5px/1.65 var(--font);
+}
+.cs-bubble-vera .cs-body{
+  background:var(--cs-vera-bg);color:var(--cs-text);
+  border:1px solid var(--cs-vera-border);
+  border-radius:4px 16px 16px 16px;
+}
+.cs-bubble-user .cs-body{
+  background:var(--cs-user-bg);color:#fff;
+  border-radius:16px 4px 16px 16px;
+}
+
+/* Typing indicator */
+.cs-typing .cs-body{
+  padding:12px 16px;
+  display:flex;align-items:center;gap:4px;
+}
+.cs-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(240,237,233,.45);
+  display:inline-block;
+  animation:cs-bounce .85s ease-in-out infinite;
+}
+.cs-dot:nth-child(2){animation-delay:.17s}
+.cs-dot:nth-child(3){animation-delay:.34s}
+@keyframes cs-bounce{
+  0%,100%{transform:translateY(0);opacity:.45}
+  50%{transform:translateY(-5px);opacity:1}
+}
+
+/* ── Bara de input ───────────────────────────────────────────────────── */
+.cs-input-bar{
+  flex:none;
+  padding:13px 18px 16px;
+  border-top:1px solid var(--cs-border);
+}
+.cs-bar{
+  display:flex;align-items:flex-end;gap:9px;
+  padding:11px 13px;
+  background:var(--cs-input-bg);
+  border:1.5px solid var(--cs-input-border);
+  border-radius:18px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.cs-bar:focus-within{
+  border-color:rgba(192,39,45,.6);
+  box-shadow:0 0 0 3px rgba(192,39,45,.12);
+}
+.cs-textarea{
+  flex:1;border:none;background:transparent;
+  font:400 14px/1.55 var(--font);color:var(--cs-text);
+  resize:none;outline:none;
+  max-height:150px;overflow-y:auto;
+  padding:2px 0;
+}
+.cs-textarea::placeholder{color:var(--cs-muted-2)}
+
+.cs-send-btn{
+  width:32px;height:32px;flex:none;border-radius:10px;
+  background:var(--red);border:none;cursor:pointer;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px rgba(192,39,45,.35);
+  transition:background .15s,transform .1s,opacity .15s;
+}
+.cs-send-btn:hover:not(:disabled){background:var(--red-hover)}
+.cs-send-btn:active:not(:disabled){transform:scale(.9)}
+.cs-send-btn:disabled{opacity:.22;cursor:not-allowed;box-shadow:none}
+
+.cs-hint{
+  margin:7px 0 0;
+  font:400 10.5px var(--font);
+  color:var(--cs-muted-2);
+  text-align:center;
+}
+
+/* ── Panoul dreapta: previzualizare ──────────────────────────────────── */
+.cs-right{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+  background:var(--cs-preview-bg);
+  height:100vh;overflow:hidden;
+}
+
+.cs-preview-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:15px 20px;
+  border-bottom:1px solid var(--cs-border);
+  flex:none;min-height:57px;
+}
+.cs-preview-label{
+  font:600 10.5px var(--font);
+  color:var(--cs-muted-2);
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.cs-preview-actions{display:flex;align-items:center;gap:10px}
+
+/* Butoanele din preview-header: variante dark */
+.cs-right .btn--ghost{
+  background:rgba(255,255,255,.06);color:var(--cs-text);
+  border-color:var(--cs-border);
+}
+.cs-right .btn--ghost:hover{
+  background:rgba(255,255,255,.10);
+  border-color:var(--cs-border-strong);
+}
+
+.cs-preview-body{
+  flex:1;overflow:hidden;
+  display:flex;flex-direction:column;
+  position:relative;
+}
+
+/* Stare goala */
+.cs-placeholder{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:16px;padding:40px;text-align:center;
+}
+.cs-ph-icon{
+  width:52px;height:52px;border-radius:16px;
+  background:rgba(194,24,47,.15);
+  display:flex;align-items:center;justify-content:center;
+}
+/* Marca: patrat alb -> vizibil in icon intens rosu */
+.cs-ph-icon .lm-a2{background:rgba(255,255,255,.85)}
+.cs-ph-text{
+  margin:0;font:400 14px/1.6 var(--font);
+  color:var(--cs-muted);max-width:260px;
+}
+
+/* Iframe-ul de previzualizare */
+.cs-iframe{
+  flex:1;width:100%;border:none;
+  background:#fff;
+}
+
+/* ── Responsive: stivuire pe mobil ──────────────────────────────────── */
+@media(max-width:768px){
+  .chat-split{
+    flex-direction:column;
+    height:auto;min-height:100vh;
+    overflow-y:auto;
+  }
+  .cs-left{
+    width:100%;max-width:none;
+    height:55vh;min-height:340px;
+    border-right:none;border-bottom:1px solid var(--cs-border);
+  }
+  .cs-right{
+    height:45vh;min-height:280px;
+  }
+}
+@media(max-width:480px){
+  .cs-left{height:60vh}
+  .cs-right{height:40vh}
+}
+@media(prefers-reduced-motion:reduce){
+  .cs-bubble{animation:none}
+  .cs-dot{animation:none}
+}
+
+/* ==========================================================================
+   Builder split-pane — embed în app-shell (sidebar rămâne vizibil)
+   ========================================================================== */
+
+/* Resetăm padding-ul content--ab ca să nu dublăm spațierea */
+.content--ab{padding:0}
+.content-inner--builder{
+  padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
+}
+
+/* Rădăcina split-ului ocupă tot spațiul disponibil în content */
+.ab-split-root{
+  display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
+}
+
+/* Coloana stângă — scrollabilă */
+.ab-split-left{
+  flex:1;overflow-y:auto;display:flex;flex-direction:column;
+}
+
+/* Container interior centrat */
+.ab-split-inner{
+  max-width:860px;margin:0 auto;padding:36px 24px;
+  display:flex;flex-direction:column;gap:28px;width:100%;box-sizing:border-box;
+}
+
+/* Subtitlu sub titlul Vera */
+.ab-subtitle{
+  margin:3px 0 0;font:400 13px var(--font);color:var(--muted);
+}
+
+/* Mesajele ocupă tot spațiul disponibil în panoul stâng când e split */
+.ab-split-root .ab-messages{
+  max-height:none;flex:1;
+}
+
+/* ── Modul split (activ după prima generare) ────────────────────────── */
+.ab-split-root.is-split{flex-direction:row}
+.ab-split-root.is-split .ab-split-left{
+  width:42%;min-width:300px;flex:none;
+  border-right:1px solid var(--line-soft);
+}
+.ab-split-root.is-split .ab-split-inner{
+  max-width:none;padding:20px 20px;
+}
+
+/* Panoul din dreapta — previzualizare */
+.ab-split-right{
+  flex:1;min-width:0;display:flex;flex-direction:column;
+  background:var(--surface-2,#f5f5f7);
+}
+
+.ab-pv-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;flex-shrink:0;
+  border-bottom:1px solid var(--line-soft);
+  background:var(--surface,#fff);
+}
+.ab-pv-label{
+  font:600 12px var(--font);color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.ab-pv-actions{display:flex;gap:8px;align-items:center}
+
+.ab-pv-body{flex:1;position:relative;overflow:hidden}
+.ab-pv-iframe{width:100%;height:100%;border:none;display:block}
+.ab-pv-ph{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;
+  color:var(--muted);font:400 14px var(--font);text-align:center;padding:24px;
+}
+.ab-pv-ph p{margin:0;max-width:240px;line-height:1.55}
+
+@media(max-width:680px){
+  .ab-split-root.is-split{flex-direction:column}
+  .ab-split-root.is-split .ab-split-left{width:100%;min-width:0;border-right:none;border-bottom:1px solid var(--line-soft);max-height:50vh;flex:none}
+}
+
+/* ==========================================================================
+   Buton icon-only (coș de gunoi lângă reia)
+   ========================================================================== */
+.btn--icon-only{
+  width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:8px;flex-shrink:0;color:var(--muted);
+}
+.btn--icon-only:hover{color:var(--red);border-color:var(--red);background:rgba(200,30,50,.06)}
+
+/* ==========================================================================
+   Modal confirmare ștergere
+   ========================================================================== */
+.modal-overlay{
+  position:fixed;inset:0;z-index:9000;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(3px);
+  animation:modal-in .15s ease;
+}
+.modal-overlay[hidden]{display:none}
+@keyframes modal-in{from{opacity:0}to{opacity:1}}
+
+.modal-box{
+  background:var(--surface);border:1px solid var(--line-soft);
+  border-radius:20px;padding:32px 28px 24px;
+  width:100%;max-width:400px;margin:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.18);
+  animation:modal-box-in .18s cubic-bezier(.34,1.3,.64,1);
+}
+@keyframes modal-box-in{from{opacity:0;transform:scale(.93) translateY(8px)}to{opacity:1;transform:none}}
+
+.modal-icon{
+  width:48px;height:48px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:16px;
+}
+.modal-icon--danger{background:rgba(200,30,50,.1);color:var(--red)}
+
+.modal-title{
+  margin:0 0 8px;font:700 17px/1.25 var(--font);color:var(--ink);
+}
+.modal-body{
+  margin:0 0 24px;font:400 14px/1.6 var(--font);color:var(--muted);
+}
+.modal-body strong{color:var(--ink);font-weight:600}
+
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+
+.btn--danger{
+  background:var(--red);color:#fff;border-color:var(--red);
+}
+.btn--danger:hover{background:#a81020;border-color:#a81020}
+.btn--md{padding:0 18px;height:38px;font-size:14px}

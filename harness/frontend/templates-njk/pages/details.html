@@ -1,96 +1,119 @@
 {% extends "layouts/base.html" %}
 {% block body %}
-{# Ecranul 04 — Agent Builder (chat ghidat). #}
 <div class="app-shell">
   {% include "partials/sidebar.html" %}
   <div class="main">
+    {% include "partials/topbar.html" %}
     <div class="content content--ab">
-      <div class="ab-wrap"
-           data-initials="{{ user.initials() }}"
-           data-skill="{{ tool.id }}"
-           data-preset="{{ preset }}">
+      <div class="content-inner content-inner--builder">
 
-        {# Header #}
-        <div class="ab-header">
-          <div class="ab-brand">
-            <div class="brand-chip brand-chip--lg">{% include "partials/mark.html" %}</div>
-            <h1 class="ab-title">Construiești <span class="ab-title-dim">pagina ta</span></h1>
-          </div>
-          <a class="btn btn--ghost btn--sm" href="/acasa">Înapoi →</a>
-        </div>
+        <div class="ab-split-root chat-split"
+             data-initials="{{ user.initials() }}"
+             data-skill="{{ tool.id if tool else '' }}"
+             data-configurat="{% if configurat %}1{% else %}0{% endif %}"
+             {% if projectID %}data-project-id="{{ projectID }}"{% endif %}
+             {% if initialHtml %}data-resume="1"{% endif %}>
 
-        {# Zona de chat — ascunsa la start, apare dupa primul mesaj #}
-        <div class="ab-chat" id="ab-chat" hidden>
-          <div id="chat-messages" class="ab-messages"></div>
-        </div>
+          {# ── Stânga: chat + input + galerie ── #}
+          <div class="ab-split-left">
 
-        {# Bara de input proeminenta #}
-        <div class="ab-input-wrap">
-          <div class="ab-bar" id="ab-bar">
-            <span class="ab-plus" aria-hidden="true">＋</span>
-            <textarea
-              id="chat-input"
-              class="ab-textarea"
-              rows="1"
-              placeholder="Descrie pagina pe care o vrei..."
-              maxlength="2000"
-              aria-label="Mesaj pentru Libra Maker"></textarea>
-            <button id="chat-send" class="ab-send" type="button" aria-label="Trimite" disabled>
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-                <path d="M13 7.5L2 2l2 5.5L2 13l11-5.5z" fill="currentColor"/>
-              </svg>
-            </button>
-          </div>
-          <p class="ab-hint">Enter trimite &middot; Shift+Enter rând nou</p>
-        </div>
+            <div class="ab-split-inner">
 
-        {# Tab-uri + grid de carduri (dispar dupa primul mesaj) #}
-        <div id="ab-browse">
-
-          <div class="ab-tabs" role="tablist">
-            <button class="ab-tab is-active" type="button" role="tab"
-              data-tab="templates" aria-selected="true">Șabloane</button>
-            <button class="ab-tab" type="button" role="tab"
-              data-tab="projects" aria-selected="false">Proiectele mele</button>
-          </div>
-
-          {# Panoul Sabloane — generat din lista TOOLS din store.js #}
-          <div class="ab-panel" id="ab-panel-templates" role="tabpanel">
-            <div class="ab-grid">
-              {% for t in tools %}
-              <button class="ab-card{% if t.id == tool.id %} is-selected{% endif %}" type="button"
-                data-skill="{{ t.id }}"
-                data-tpl="{{ t.examplePrompt }}">
-                <div class="ab-card-icon">{{ t.icon }}</div>
-                <div class="ab-card-body">
-                  <div class="ab-card-name">{{ t.name }}</div>
-                  <div class="ab-card-desc">{{ t.desc }}</div>
+              {# Header Vera #}
+              <div class="ab-header">
+                <div class="ab-brand">
+                  <div class="lm-mark" aria-hidden="true">
+                    <div class="lm-a1"></div>
+                    <div class="lm-row"><div class="lm-a2"></div><div class="lm-a3"></div></div>
+                  </div>
+                  <div>
+                    <h1 class="ab-title">Construiești <span class="ab-title-dim">pagina ta</span></h1>
+                    {% if configurat %}
+                    <p class="ab-subtitle">{{ agentNume }} te ajută &middot; {{ model }}</p>
+                    {% endif %}
+                  </div>
                 </div>
-              </button>
-              {% endfor %}
+              </div>
+
+              {# Zona de mesaje (apare după primul send) #}
+              <div id="cs-messages-wrap" hidden>
+                <div class="ab-messages" id="cs-messages" role="log" aria-live="polite"></div>
+              </div>
+
+              {# Bara de input #}
+              <div class="ab-input-wrap">
+                <div class="ab-bar">
+                  <span class="ab-plus" aria-hidden="true">＋</span>
+                  <textarea
+                    id="cs-input"
+                    class="ab-textarea"
+                    rows="1"
+                    placeholder="Descrie pagina pe care o vrei..."
+                    maxlength="2000"
+                    aria-label="Mesaj pentru Vera"></textarea>
+                  <button id="cs-send" class="ab-send" type="button" disabled aria-label="Trimite">
+                    <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                      <path d="M13 7.5L2 2l2 5.5L2 13l11-5.5z" fill="currentColor"/>
+                    </svg>
+                  </button>
+                </div>
+                <p class="ab-hint">Enter trimite &middot; Shift+Enter rând nou</p>
+              </div>
+
+              {# Galerie șabloane (dispare după prima generare) #}
+              <div id="ab-gallery">
+                <div class="ab-tabs">
+                  <button class="ab-tab is-active" type="button">Șabloane</button>
+                </div>
+                <div class="ab-panel ab-panel--gallery" id="ab-tab-sabloane">
+                  <div class="ab-grid">
+                    {% for t in tools %}
+                    <button class="ab-card{% if tool and tool.id == t.id %} is-selected{% endif %}"
+                            type="button"
+                            data-skill="{{ t.id }}">
+                      <span class="ab-card-icon">{{ t.icon }}</span>
+                      <span class="ab-card-body">
+                        <span class="ab-card-name">{{ t.name }}</span>
+                        <span class="ab-card-desc">{{ t.desc }}</span>
+                      </span>
+                    </button>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
-          {# Panoul Proiectele mele #}
-          <div class="ab-panel" id="ab-panel-projects" hidden role="tabpanel">
-            <div class="ab-empty">
-              <div class="ab-empty-icon">📁</div>
-              <div class="ab-empty-text">Proiectele tale salvate apar aici.</div>
-              <a class="btn btn--ghost btn--sm" href="/proiectele-mele">Vezi toate proiectele</a>
+          {# ── Dreapta: previzualizare (hidden inițial) ── #}
+          <div class="ab-split-right" id="cs-right" hidden>
+            <div class="ab-pv-head">
+              <span class="ab-pv-label">Previzualizare</span>
+              <div class="ab-pv-actions" id="cs-preview-actions" hidden>
+                <button class="btn btn--primary btn--sm" id="cs-handoff-btn" type="button">
+                  Trimite la echipa Dev
+                </button>
+                <a class="btn btn--ghost btn--sm" href="/acasa">← Acasă</a>
+              </div>
+            </div>
+            <div class="ab-pv-body">
+              <div class="ab-pv-ph" id="cs-placeholder">
+                <div class="lm-mark" aria-hidden="true">
+                  <div class="lm-a1"></div>
+                  <div class="lm-row"><div class="lm-a2"></div><div class="lm-a3"></div></div>
+                </div>
+                <p>Descrie ce vrei în stânga și pagina apare aici.</p>
+              </div>
+              <iframe id="cs-iframe"
+                      class="ab-pv-iframe"
+                      sandbox="allow-scripts"
+                      title="Previzualizare pagina generată"
+                      hidden></iframe>
             </div>
           </div>
 
-        </div>{# /ab-browse #}
-
-        {# Formular ascuns — completat prin chat, trimis la final #}
-        <form id="chat-form" action="/proiect-nou/detalii" method="POST" style="display:none">
-          <input type="hidden" name="skill_id" id="form-skill" value="{{ tool.id }}">
-          {% if projectID %}<input type="hidden" name="project_id" value="{{ projectID }}">{% endif %}
-          <input type="hidden" name="name" id="form-name">
-          <input type="hidden" name="description" id="form-desc">
-        </form>
-
-      </div>{# /ab-wrap #}
+        </div>
+      </div>
     </div>
   </div>
 </div>

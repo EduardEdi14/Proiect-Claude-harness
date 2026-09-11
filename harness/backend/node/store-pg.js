@@ -157,6 +157,24 @@ class PgStore {
     return project;
   }
 
+  /**
+   * Proiect venit de la asistent: pagina e deja construita, deci intra direct
+   * ca ciorna. Nu pornim runner-ul — nu mai avem ce genera.
+   */
+  async createBuilt(userID, skillID, name, description, durationSec) {
+    const id  = newID();
+    const wsp = workspacePath(userID, id);
+    const { rows } = await db.query(
+      `INSERT INTO sessions
+         (id, user_id, skill_id, project_name, description, workspace_path,
+          status, duration_sec, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'draft', $7, now())
+       RETURNING *`,
+      [id, userID, skillID, name, description, wsp, durationSec || 0]
+    );
+    return rowToProject(rows[0]);
+  }
+
   async update(id, skillID, name, description) {
     await db.query(
       `UPDATE sessions

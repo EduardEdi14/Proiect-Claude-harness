@@ -11,11 +11,26 @@
     </div>
     {% if p.status == 'handed_off' %}
       <span class="badge badge--dev">Predat la Dev</span>
+      <button class="btn btn--ghost btn--sm btn--icon-only js-sterge-proiect"
+              data-id="{{ p.id }}" data-name="{{ p.name | escape }}"
+              title="Șterge proiectul" aria-label="Șterge proiectul">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4M6 7v5M10 7v5M3 4l1 9.5A.5.5 0 004.5 14h7a.5.5 0 00.5-.5L13 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     {% elif p.status == 'draft' %}
       <span class="badge badge--draft">Ciornă</span>
-      <a class="btn btn--primary btn--sm" href="/proiect/{{ p.id }}">Reia proiectul</a>
+      <a class="btn btn--primary btn--sm" href="/proiect/{{ p.id }}/detalii">Reia proiectul</a>
+      <button class="btn btn--ghost btn--sm btn--icon-only js-sterge-proiect"
+              data-id="{{ p.id }}" data-name="{{ p.name | escape }}"
+              title="Șterge proiectul" aria-label="Șterge proiectul">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4M6 7v5M10 7v5M3 4l1 9.5A.5.5 0 004.5 14h7a.5.5 0 00.5-.5L13 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     {% elif p.status == 'done' %}
       <span class="badge badge--done">Finalizat</span>
+      <button class="btn btn--ghost btn--sm btn--icon-only js-sterge-proiect"
+              data-id="{{ p.id }}" data-name="{{ p.name | escape }}"
+              title="Șterge proiectul" aria-label="Șterge proiectul">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4M6 7v5M10 7v5M3 4l1 9.5A.5.5 0 004.5 14h7a.5.5 0 00.5-.5L13 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     {% else %}
       <span class="badge badge--work">Se generează</span>
     {% endif %}

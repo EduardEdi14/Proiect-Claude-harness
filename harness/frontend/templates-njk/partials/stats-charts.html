@@ -87,57 +87,21 @@
         <div class="viz-xaxis">
           {% for w in stats.weeks %}<span>{{ w.label }}</span>{% endfor %}
         </div>
-      {% else %}
-        <div class="viz-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="viz-empty">Încă niciun proiect pornit.<br>Primul apare aici imediat ce îl construiești.</div>
-      {% endif %}
-    </div>
-
-    {# ---- Bara stivuita: unde sunt proiectele in flux ---- #}
-    <div class="viz-card">
-      <div class="viz-head">
-        <span class="viz-title">Unde sunt proiectele tale</span>
-        <span class="viz-sub">
-          {% if stats.inWork > 0 %}{{ stats.inWork }} în lucru chiar acum{% else %}Etapele fluxului, de la ciornă la publicare{% endif %}
-        </span>
-      </div>
-
-      {% if stats.stagesTotal > 0 %}
-        {# Latimea segmentelor vine din flex, proportional cu numarul —
-           asa insumeaza exact, fara resturi din rotunjirea procentelor. #}
-        <div class="viz-stack">
-          {% for s in stats.stages %}{% if s.count > 0 %}
-          <span class="seg seg--{{ loop.index }}" style="flex:{{ s.count }}" tabindex="0">
-            <span class="col-tip">{{ s.label }} · {{ s.count }} ({{ s.pct }}%)</span>
-          </span>
-          {% endif %}{% endfor %}
-        </div>
-
-        {# Legenda e mereu prezenta: identitatea nu se sprijina doar pe culoare. #}
-        <div class="viz-legend">
-          {% for s in stats.stages %}
-          <div class="lg">
-            <span class="lg-dot" style="background:var(--stage-{{ loop.index }})"></span>
-            <span class="lg-name">{{ s.label }}</span>
-            <span class="lg-num">{{ s.count }}</span>
-          </div>
-          {% endfor %}
-        </div>
 
         <details class="viz-table">
           <summary>Vezi cifrele ca tabel</summary>
           <table>
-            <thead><tr><th scope="col">Etapă</th><th scope="col">Proiecte</th><th scope="col">Pondere</th></tr></thead>
+            <thead><tr><th scope="col">Săptămâna</th><th scope="col">Proiecte</th></tr></thead>
             <tbody>
-              {% for s in stats.stages %}
-              <tr><td>{{ s.label }}</td><td>{{ s.count }}</td><td>{{ s.pct }}%</td></tr>
+              {% for w in stats.weeks %}
+              <tr><td>{{ w.label }}</td><td>{{ w.count }}</td></tr>
               {% endfor %}
             </tbody>
           </table>
         </details>
       {% else %}
         <div class="viz-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="viz-empty">Nimic în flux încă.<br>Aici vezi câte proiecte sunt ciornă, la Dev sau finalizate.</div>
+        <div class="viz-empty">Încă niciun proiect pornit.<br>Primul apare aici imediat ce îl construiești.</div>
       {% endif %}
     </div>
 
