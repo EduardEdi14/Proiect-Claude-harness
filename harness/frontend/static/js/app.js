@@ -902,26 +902,38 @@
   // ── Fișiere atașate ───────────────────────────────────────────────────
   var attachedFiles = []; // [{ filename, text }]
 
-  // Tipuri citite direct în browser (text), vs tipuri care necesită server (binar)
-  var TEXT_EXTS   = ["txt", "csv", "md", "log", "json"];
-  var SERVER_EXTS = ["docx", "xlsx", "xls"];
+  // Tipuri acceptate
+  var TEXT_EXTS  = ["txt", "csv", "md", "log", "json"];
+  var SERVER_EXTS = ["docx", "xlsx", "xls", "pdf"];
+  var IMAGE_EXTS  = ["jpg", "jpeg", "png", "gif", "webp"];
+  var MIME_MAP    = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp" };
 
   function fileIcon(name) {
     var e = (name.split(".").pop() || "").toLowerCase();
+    if (IMAGE_EXTS.includes(e))                   return "🖼️";
+    if (e === "pdf")                               return "📕";
     if (e === "csv" || e === "xlsx" || e === "xls") return "📊";
     if (e === "docx" || e === "doc")               return "📝";
-    if (e === "json")                               return "🗂️";
+    if (e === "json")                              return "🗂️";
     return "📄";
   }
 
-  function addChip(filename, text) {
-    var idx = attachedFiles.push({ filename: filename, text: text }) - 1;
+  function addChip(filename, payload) {
+    // payload: { type: 'text', text } sau { type: 'image', data, mediaType }
+    var idx = attachedFiles.push({ filename: filename, ...payload }) - 1;
     var chip = document.createElement("div");
     chip.className = "ab-file-chip";
-    chip.innerHTML =
-      "<span class='ab-file-chip-icon'>" + fileIcon(filename) + "</span>" +
-      "<span class='ab-file-chip-name'>" + esc(filename) + "</span>" +
-      "<button class='ab-file-chip-remove' type='button' aria-label='Elimină'>✕</button>";
+    if (payload.type === "image") {
+      chip.innerHTML =
+        "<img class='ab-file-chip-thumb' src='data:" + payload.mediaType + ";base64," + payload.data + "' alt='" + esc(filename) + "'>" +
+        "<span class='ab-file-chip-name'>" + esc(filename) + "</span>" +
+        "<button class='ab-file-chip-remove' type='button' aria-label='Elimină'>✕</button>";
+    } else {
+      chip.innerHTML =
+        "<span class='ab-file-chip-icon'>" + fileIcon(filename) + "</span>" +
+        "<span class='ab-file-chip-name'>" + esc(filename) + "</span>" +
+        "<button class='ab-file-chip-remove' type='button' aria-label='Elimină'>✕</button>";
+    }
     chip.querySelector(".ab-file-chip-remove").addEventListener("click", function () {
       attachedFiles.splice(idx, 1);
       chip.remove();
@@ -945,56 +957,89 @@
     return chip;
   }
 
+  // ── Procesare fișier (folosit de input click și drag & drop) ─────────
+  async function processFile(file) {
+    if (!file) return;
+    var ext = (file.name.split(".").pop() || "").toLowerCase();
+
+    if (IMAGE_EXTS.includes(ext)) {
+      if (file.size > 5 * 1024 * 1024) { addVera("Imaginea depășește limita de 5 MB."); return; }
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        var dataUrl   = ev.target.result || "";
+        var base64    = dataUrl.split(",")[1] || "";
+        var mediaType = MIME_MAP[ext] || "image/jpeg";
+        addChip(file.name, { type: "image", data: base64, mediaType: mediaType });
+      };
+      reader.onerror = function () { addVera("Nu am putut citi imaginea."); };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    if (TEXT_EXTS.includes(ext)) {
+      var reader2 = new FileReader();
+      reader2.onload = function (e) {
+        var text = e.target.result || "";
+        if (text.length > 60000) text = text.slice(0, 60000) + "\n\n[... trunchiat]";
+        addChip(file.name, { type: "text", text: text });
+      };
+      reader2.onerror = function () { addVera("Nu am putut citi fișierul."); };
+      reader2.readAsText(file, "utf-8");
+      return;
+    }
+
+    if (!SERVER_EXTS.includes(ext)) {
+      addVera("Tip nesuportat. Poți atașa: imagini (.jpg .png .gif .webp), .pdf, .docx, .xlsx, .txt, .csv, .json, .md");
+      return;
+    }
+
+    var loadingChip = showLoadingChip(file.name);
+    try {
+      var fd = new FormData();
+      fd.append("fisier", file);
+      var r  = await fetch("/asistent/fisier", { method: "POST", body: fd });
+      var d  = await r.json();
+      loadingChip.remove();
+      if (!attachList.children.length) attachList.hidden = true;
+      if (!r.ok) { addVera(esc(d.eroare || "Nu am putut procesa fișierul.")); return; }
+      addChip(d.filename, { type: "text", text: d.text });
+    } catch (err) {
+      loadingChip.remove();
+      if (!attachList.children.length) attachList.hidden = true;
+      addVera("Eroare la încărcarea fișierului. Încearcă din nou.");
+    }
+  }
+
   if (attachBtn && fileInput) {
     attachBtn.addEventListener("click", function () { fileInput.click(); });
-
-    fileInput.addEventListener("change", async function () {
+    fileInput.addEventListener("change", function () {
       var file = fileInput.files[0];
       fileInput.value = "";
-      if (!file) return;
+      processFile(file);
+    });
+  }
 
-      var ext = (file.name.split(".").pop() || "").toLowerCase();
+  // ── Drag & drop pe zona de input ──────────────────────────────────────
+  var inputDock = container.querySelector(".ab-input-dock");
+  if (inputDock) {
+    var dragCounter = 0;
 
-      // ── Fișiere text: citite direct în browser, fără request la server ──
-      if (TEXT_EXTS.includes(ext)) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-          var text = e.target.result || "";
-          if (text.length > 60000) text = text.slice(0, 60000) + "\n\n[... trunchiat]";
-          addChip(file.name, text);
-        };
-        reader.onerror = function () {
-          addVera("Nu am putut citi fișierul.");
-        };
-        reader.readAsText(file, "utf-8");
-        return;
-      }
-
-      // ── Fișiere binare (DOCX, XLSX): server extrage textul ──
-      if (!SERVER_EXTS.includes(ext)) {
-        addVera("Tip nesuportat. Poți atașa: .txt .csv .docx .xlsx .json .md");
-        return;
-      }
-
-      var loadingChip = showLoadingChip(file.name);
-      try {
-        var fd = new FormData();
-        fd.append("fisier", file);
-        var r  = await fetch("/asistent/fisier", { method: "POST", body: fd });
-        var d  = await r.json();
-        loadingChip.remove();
-        if (!attachList.children.length) attachList.hidden = true;
-
-        if (!r.ok) {
-          addVera(esc(d.eroare || "Nu am putut procesa fișierul."));
-          return;
-        }
-        addChip(d.filename, d.text);
-      } catch (err) {
-        loadingChip.remove();
-        if (!attachList.children.length) attachList.hidden = true;
-        addVera("Eroare la încărcarea fișierului. Încearcă din nou.");
-      }
+    inputDock.addEventListener("dragenter", function (e) {
+      e.preventDefault();
+      dragCounter++;
+      inputDock.classList.add("is-drag-over");
+    });
+    inputDock.addEventListener("dragleave", function () {
+      dragCounter--;
+      if (dragCounter <= 0) { dragCounter = 0; inputDock.classList.remove("is-drag-over"); }
+    });
+    inputDock.addEventListener("dragover", function (e) { e.preventDefault(); });
+    inputDock.addEventListener("drop", function (e) {
+      e.preventDefault();
+      dragCounter = 0;
+      inputDock.classList.remove("is-drag-over");
+      var files = e.dataTransfer.files;
+      for (var i = 0; i < files.length; i++) processFile(files[i]);
     });
   }
 
@@ -1133,10 +1178,17 @@
       if (gallery)      gallery.hidden      = true;
     }
 
+    // Imaginile merg separat la API; fișierele text merg în prompt
+    var imagini     = attachedFiles.filter(function(f) { return f.type === "image"; });
+    var textFiles   = attachedFiles.filter(function(f) { return f.type === "text"; });
+
     // În chat afișăm doar textul utilizatorului (fără conținut raw al fișierelor)
-    var displayText = userText || attachedFiles.map(function(f) { return "📎 " + f.filename; }).join(", ");
+    var chipLabels = attachedFiles.map(function(f) {
+      return (f.type === "image" ? "🖼️ " : "📎 ") + f.filename;
+    });
+    var displayText = userText || chipLabels.join(", ");
     if (attachedFiles.length && userText) {
-      displayText = attachedFiles.map(function(f) { return "📎 " + f.filename; }).join(", ") + " · " + userText;
+      displayText = chipLabels.join(", ") + " · " + userText;
     }
     addUser(displayText);
 
@@ -1147,17 +1199,19 @@
     resize();
     syncSend();
 
+    var fullText = buildMessage(userText, textFiles);
+
     if (firstBuild) {
-      doBuild(fullText, displayText);
+      doBuild(fullText, displayText, imagini);
     } else {
-      doModifica(fullText, displayText);
+      doModifica(fullText, displayText, imagini);
     }
   }
 
-  // Construieste mesajul complet cu contextul din fisiere atasat
-  function buildMessage(userText) {
-    if (!attachedFiles.length) return userText;
-    var parts = attachedFiles.map(function(f) {
+  // Construieste mesajul complet cu contextul din fisierele text atasate
+  function buildMessage(userText, textFiles) {
+    if (!textFiles || !textFiles.length) return userText;
+    var parts = textFiles.map(function(f) {
       return "[Fișier atașat: " + f.filename + "]\n\n" + f.text;
     });
     var context = parts.join("\n\n---\n\n");
@@ -1166,7 +1220,7 @@
   }
 
   // ── Prima construire ──────────────────────────────────────────────────
-  async function doBuild(text, displayText) {
+  async function doBuild(text, displayText, imagini) {
     busy = true;
     syncSend();
     showTyping();
@@ -1178,10 +1232,11 @@
     if (name.length < 3) name = "Pagina mea";
 
     try {
+      var imgPayload = (imagini || []).map(function(img) { return { data: img.data, mediaType: img.mediaType }; });
       var r = await fetch("/asistent/construieste", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nume: name, descriere: text, display_text: displayText, skill: skill }),
+        body: JSON.stringify({ nume: name, descriere: text, display_text: displayText, skill: skill, imagini: imgPayload }),
       });
       removeTyping();
       var d = await r.json();
@@ -1209,12 +1264,13 @@
   }
 
   // ── Modificare ────────────────────────────────────────────────────────
-  async function doModifica(text, displayText) {
+  async function doModifica(text, displayText, imagini) {
     busy = true;
     syncSend();
     showTyping();
 
     try {
+      var imgPayload = (imagini || []).map(function(img) { return { data: img.data, mediaType: img.mediaType }; });
       var r = await fetch("/asistent/modifica", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1223,6 +1279,7 @@
           display_text: displayText,
           html_curent:  currentHtml,
           proiect_id:   currentProjId,
+          imagini:      imgPayload,
         }),
       });
       removeTyping();

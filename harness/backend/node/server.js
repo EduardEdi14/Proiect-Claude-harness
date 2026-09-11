@@ -40,7 +40,7 @@ nunjucks.configure(TEMPLATES_DIR, {
 
 app.use('/static', express.static(path.join(__dirname, '../../frontend/static')));
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json({ limit: '30mb' }));
 
 app.use(session({
   secret:            process.env.SESSION_SECRET || 'libra-maker-dev-secret-2025',
@@ -411,8 +411,9 @@ app.post('/asistent/construieste', auth(async (req, res, next) => {
       return res.status(400).json({ eroare: 'Mai avem nevoie de un nume si de o descriere.' });
     }
 
+    const imagini = Array.isArray(req.body.imagini) ? req.body.imagini.slice(0, 5) : [];
     const inceput = Date.now();
-    const r = await agent.construieste({ nume, descriere, skill });
+    const r = await agent.construieste({ nume, descriere, skill, imagini });
     const durata = Math.max(1, Math.round((Date.now() - inceput) / 1000));
 
     // Pagina nu ramane doar in previzualizare: devine un proiect real, cu
@@ -443,8 +444,9 @@ app.post('/asistent/modifica', auth(async (req, res, next) => {
     if (!mesaj)      return res.status(400).json({ eroare: 'Mesaj gol.' });
     if (!htmlCurent) return res.status(400).json({ eroare: 'HTML curent lipseste.' });
 
+    const imaginiMod = Array.isArray(req.body.imagini) ? req.body.imagini.slice(0, 5) : [];
     const inceputMod = Date.now();
-    const r = await agent.modifica(mesaj, htmlCurent);
+    const r = await agent.modifica(mesaj, htmlCurent, imaginiMod);
     const durataMod = Math.max(1, Math.round((Date.now() - inceputMod) / 1000));
 
     // Actualizeaza fisierul in workspace-ul proiectului doar daca s-a generat HTML nou.
@@ -531,12 +533,30 @@ app.post('/asistent/fisier',
       const MAX = 60_000;
       let text  = '';
 
+      // Imagini — returnate ca base64 pentru a fi trimise vizual la API
+      const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      const MIME_MAP   = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp' };
+      if (IMAGE_EXTS.includes(ext)) {
+        const MAX_IMG = 5 * 1024 * 1024;
+        if (file.size > MAX_IMG) {
+          return res.status(400).json({ eroare: 'Imaginea depășește limita de 5 MB.' });
+        }
+        const data      = file.buffer.toString('base64');
+        const mediaType = MIME_MAP[ext];
+        return res.json({ type: 'image', data, mediaType, filename: file.originalname, size: file.size });
+      }
+
       if (['.txt', '.csv', '.md', '.log'].includes(ext)) {
         text = file.buffer.toString('utf8');
 
       } else if (ext === '.json') {
         try { text = JSON.stringify(JSON.parse(file.buffer.toString('utf8')), null, 2); }
         catch { text = file.buffer.toString('utf8'); }
+
+      } else if (ext === '.pdf') {
+        const pdfParse = require('pdf-parse');
+        const data = await pdfParse(file.buffer);
+        text = data.text;
 
       } else if (ext === '.docx') {
         const mammoth = require('mammoth');
@@ -552,7 +572,7 @@ app.post('/asistent/fisier',
 
       } else {
         return res.status(400).json({
-          eroare: 'Tip nesuportat. Fișierele acceptate: .txt .csv .docx .xlsx .json .md',
+          eroare: 'Tip nesuportat. Fișierele acceptate: .jpg .png .gif .webp .pdf .txt .csv .docx .xlsx .json .md',
         });
       }
 
@@ -560,7 +580,7 @@ app.post('/asistent/fisier',
         text = text.slice(0, MAX) + '\n\n[... conținut trunchiat la ' + MAX + ' caractere]';
       }
 
-      return res.json({ text, filename: file.originalname, size: file.size });
+      return res.json({ type: 'text', text, filename: file.originalname, size: file.size });
     } catch (err) { next(err); }
   })
 );

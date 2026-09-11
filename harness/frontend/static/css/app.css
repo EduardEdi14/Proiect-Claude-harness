@@ -1597,4 +1597,6 @@ a{color:var(--link);text-decoration:none}
   display:flex;align-items:center;justify-content:center;
 }
 .ab-file-chip-remove:hover{color:var(--red)}
+.ab-file-chip-thumb{width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0}
+.ab-input-dock.is-drag-over{outline:2px dashed var(--red);outline-offset:-4px;background:color-mix(in srgb,var(--red) 6%,var(--surface))}
 .ab-chip-loading{font:400 11px var(--font);color:var(--muted);animation:typing-bounce .85s ease-in-out infinite}
