@@ -25,6 +25,10 @@ RUN cd backend/node && npm install --omit=dev
 COPY backend/node/   ./backend/node/
 COPY backend/python/ ./backend/python/
 
+# Skill-urile sunt cunostintele agentului: isi citeste catalogul din SKILL.md,
+# ca sa nu promita colegului altceva decat construieste runner-ul.
+COPY docker/claude-runner/skills/ ./backend/skills/
+
 # Frontend-ul (sabloanele Nunjucks si fisierele statice)
 COPY frontend/ ./frontend/
 

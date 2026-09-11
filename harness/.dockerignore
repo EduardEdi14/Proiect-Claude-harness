@@ -9,10 +9,14 @@
 mockup/
 workspaces/
 scripts/
-docker/
+# docker/ nu mai e exclus in bloc: backend/skills vine din docker/claude-runner/skills,
+# iar agentul isi citeste catalogul de acolo.
+docker/claude-runner/Dockerfile
 backend/cmd/
 backend/internal/
 *.md
+# ...dar SKILL.md sunt cunostintele agentului, nu documentatie.
+!docker/claude-runner/skills/**
 Dockerfile
 docker-compose*.yml
 .dockerignore

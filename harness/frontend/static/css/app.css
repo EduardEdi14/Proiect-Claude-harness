@@ -112,6 +112,9 @@
 }
 
 *,*::before,*::after{box-sizing:border-box}
+/* Atributul hidden trebuie sa bata clasele care seteaza display
+   (butoanele au display:inline-flex si altfel raman vizibile). */
+[hidden]{display:none!important}
 html,body{height:100%}
 body{
   margin:0;background:var(--bg);color:var(--ink);
@@ -1062,3 +1065,44 @@ a{color:var(--link);text-decoration:none}
   .stat-num{font-size:23px}
   .stat-chip{width:34px;height:34px}
 }
+
+/* ---------- asistentul din ecranul de construire ---------- */
+
+/* Cine te ajuta, sub titlu. */
+.ab-who{font:500 12px var(--font);color:var(--muted-2);margin-top:3px}
+
+.as-warn{
+  padding:12px 15px;border-radius:12px;
+  background:var(--badge-draft-bg);color:var(--badge-draft-fg);
+  font:500 12.5px/1.6 var(--font);
+}
+.as-warn code{font:600 11.5px var(--mono)}
+
+/* Consumul, sub fiecare raspuns. */
+.as-usage{
+  margin-top:9px;padding-top:8px;border-top:1px solid var(--line-soft);
+  display:flex;flex-wrap:wrap;gap:4px 12px;
+  font:500 10.5px var(--font);color:var(--muted-2);
+  font-variant-numeric:tabular-nums;
+}
+.as-usage b{font-weight:700;color:var(--muted)}
+
+/* Raspunsurile gata scrise, propuse de asistent. */
+.as-suggest{display:flex;flex-wrap:wrap;gap:8px;padding-left:34px}
+.as-chip{
+  padding:8px 14px;border-radius:999px;cursor:pointer;
+  background:var(--surface);border:1.5px solid var(--line-strong);
+  color:var(--ink);font:600 12px var(--font);
+  transition:background .15s,border-color .15s,transform .12s;
+}
+.as-chip:hover{border-color:var(--red);background:var(--tint);transform:translateY(-1px)}
+.as-chip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.as-chip[disabled]{opacity:.5;cursor:default;transform:none}
+
+.ab-foot{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.as-total{font:600 10.5px var(--font);color:var(--muted-2);font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion:reduce){ .as-chip:hover{transform:none} }
+
+/* Pagina construita, in ecranul de rezultat. */
+.preview-frame{flex:1;width:100%;border:none;background:#fff;min-height:320px}

@@ -8,16 +8,31 @@
       <div class="ab-wrap"
            data-initials="{{ user.initials() }}"
            data-skill="{{ tool.id }}"
-           data-preset="{{ preset }}">
+           data-preset="{{ preset }}"
+           data-agent="{% if configurat %}1{% else %}0{% endif %}">
 
         {# Header #}
         <div class="ab-header">
           <div class="ab-brand">
             <div class="brand-chip brand-chip--lg">{% include "partials/mark.html" %}</div>
-            <h1 class="ab-title">Construiești <span class="ab-title-dim">pagina ta</span></h1>
+            <div>
+              <h1 class="ab-title">Construiești <span class="ab-title-dim">pagina ta</span></h1>
+              {% if configurat %}<div class="ab-who">{{ agentNume }} te ajută · {{ model }}</div>{% endif %}
+            </div>
           </div>
           <a class="btn btn--ghost btn--sm" href="/acasa">Înapoi →</a>
         </div>
+
+        {% if not configurat %}
+        {# Colegul din business nu are ce face cu numele variabilelor de mediu.
+           Ii spunem ce inseamna pentru el si cum merge mai departe; detaliul
+           tehnic pleaca in logul serverului, pentru cine administreaza. #}
+        <div class="as-warn">
+          Asistentul nu e disponibil acum, dar poți merge mai departe: descrie pagina
+          în câteva rânduri, iar apoi îți cerem un nume pentru ea. Proiectul ajunge
+          la fel la echipa de dezvoltare.
+        </div>
+        {% endif %}
 
         {# Zona de chat — ascunsa la start, apare dupa primul mesaj #}
         <div class="ab-chat" id="ab-chat" hidden>
@@ -41,7 +56,10 @@
               </svg>
             </button>
           </div>
-          <p class="ab-hint">Enter trimite &middot; Shift+Enter rând nou</p>
+          <div class="ab-foot">
+            <p class="ab-hint">Enter trimite &middot; Shift+Enter rând nou</p>
+            <span class="as-total" id="ab-total" hidden></span>
+          </div>
         </div>
 
         {# Tab-uri + grid de carduri (dispar dupa primul mesaj) #}

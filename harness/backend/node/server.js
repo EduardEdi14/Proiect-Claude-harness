@@ -13,6 +13,7 @@ const nunjucks = require('nunjucks');
 
 const { STATUS, TOOLS, toolByID, Store } = require('./store');
 const { MemoryStore }                     = require('./store-memory');
+const agent                               = require('./agent');
 
 // ---------- app ----------
 
@@ -216,6 +217,9 @@ app.get('/proiect-nou/detalii', auth((req, res) => {
     name:        '',
     description: '',
     error:       '',
+    configurat:  agent.isConfigured(),
+    agentNume:   agent.NUME,
+    model:       agent.DEPLOYMENT,
   });
 }));
 
@@ -297,6 +301,9 @@ app.get('/proiect/:id', auth(async (req, res) => {
     title:   p.name,
     user:    req.user,
     project: p,
+    // Proiectele venite de la asistent au pagina scrisa pe disc: o aratam pe ea.
+    // Cele generate de runner inca nu produc fisiere, deci raman cu macheta.
+    arePagina: agent.citestePagina(p.workspacePath) !== null,
   });
 }));
 
@@ -309,6 +316,86 @@ app.get('/proiect/:id/status', auth(async (req, res) => {
     return res.status(204).send();
   }
   return hxRedirect(req, res, `/proiect/${p.id}`);
+}));
+
+// ---------- agentul de conversatie ----------
+
+// Asistentul nu mai are ecran separat: traieste in "Construiesti pagina ta".
+// Pastram adresa veche ca redirect, ca sa nu rupem linkurile deja trimise.
+app.get('/asistent', auth((req, res) => res.redirect('/proiect-nou/detalii')));
+
+// POST /asistent/mesaj — un pas de conversatie
+app.post('/asistent/mesaj', auth(async (req, res, next) => {
+  if (!agent.isConfigured()) {
+    return res.status(503).json({ eroare: 'Asistentul nu e configurat pe acest server.' });
+  }
+  try {
+    // Istoricul sta in sesiune: conversatia e efemera, nu are ce cauta in baza.
+    const istoric = req.session.chat || [];
+    const text    = (req.body.mesaj || '').trim().slice(0, 4000);
+    if (!text) return res.status(400).json({ eroare: 'Mesaj gol.' });
+
+    istoric.push({ role: 'user', content: text });
+    const r = await agent.raspunde(istoric);
+    istoric.push({ role: 'assistant', content: r.raspuns });
+
+    // Pastram doar ultimele 30 de mesaje, ca sesiunea sa nu creasca la nesfarsit.
+    req.session.chat = istoric.slice(-30);
+    return res.json(r);
+  } catch (err) { next(err); }
+}));
+
+// POST /asistent/construieste — genereaza pagina si creeaza proiectul
+app.post('/asistent/construieste', auth(async (req, res, next) => {
+  if (!agent.isConfigured()) {
+    return res.status(503).json({ eroare: 'Asistentul nu e configurat pe acest server.' });
+  }
+  try {
+    const nume      = (req.body.nume      || '').trim().slice(0, 120);
+    const descriere = (req.body.descriere || '').trim().slice(0, 4000);
+    const skill     = (req.body.skill     || '').trim();
+    if (nume.length < 3 || descriere.length < 20) {
+      return res.status(400).json({ eroare: 'Mai avem nevoie de un nume si de o descriere.' });
+    }
+
+    const inceput = Date.now();
+    const r = await agent.construieste({ nume, descriere, skill });
+    const durata = Math.max(1, Math.round((Date.now() - inceput) / 1000));
+
+    // Pagina nu ramane doar in previzualizare: devine un proiect real, cu
+    // fisierele scrise in workspace-ul sesiunii, exact ca la generarea din
+    // container. De acolo poate fi reluata si trimisa echipei de dezvoltare.
+    const p = await store.createBuilt(req.user.id, skill, nume, descriere, durata);
+    agent.salveazaPagina(p.workspacePath, r.html, { nume, descriere, skill });
+
+    return res.json({ ...r, proiectId: p.id, proiectURL: `/proiect/${p.id}` });
+  } catch (err) { next(err); }
+}));
+
+// GET /proiect/:id/pagina — pagina construita, servita ca fisier.
+//
+// Se incarca in <iframe sandbox>, deci ruleaza izolata: fara acces la sesiune
+// si fara sa poata naviga aplicatia. Antetele de mai jos o tin izolata si daca
+// cineva o deschide direct.
+app.get('/proiect/:id/pagina', auth(async (req, res, next) => {
+  try {
+    const p = await store.getProject(req.params.id);
+    if (!p || p.userID !== req.user.id) return res.status(404).send('Proiect negăsit.');
+
+    const html = agent.citestePagina(p.workspacePath);
+    if (html === null) return res.status(404).send('Pagina nu a fost construită încă.');
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline'; form-action 'none'");
+    res.set('X-Content-Type-Options', 'nosniff');
+    return res.send(html);
+  } catch (err) { next(err); }
+}));
+
+// POST /asistent/reset — porneste o discutie noua
+app.post('/asistent/reset', auth((req, res) => {
+  req.session.chat = [];
+  return res.json({ ok: true });
 }));
 
 // POST /proiect/:id/handoff — preda proiectul echipei Dev
@@ -364,6 +451,15 @@ async function start() {
     console.log('[store] DATABASE_URL lipseste — store in memorie (date demo).');
     store = new MemoryStore();
     await store.init();
+  }
+
+  // Starea asistentului se spune o singura data, aici. In interfata colegul
+  // vede doar ca nu e disponibil — numele variabilelor sunt treaba noastra.
+  if (agent.isConfigured()) {
+    console.log(`[asistent] ${agent.NUME} activa, model ${agent.DEPLOYMENT}`);
+  } else {
+    console.warn(`[asistent] inactiv - lipsesc din mediu: ${agent.lipsuri().join(', ')}.`);
+    console.warn('[asistent] .env se citeste la pornirea containerului: dupa ce il editezi, reporneste.');
   }
 
   app.listen(PORT, () => {
