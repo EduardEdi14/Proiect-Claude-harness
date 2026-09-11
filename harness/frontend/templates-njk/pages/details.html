@@ -70,7 +70,8 @@
                     {% for t in tools %}
                     <button class="ab-card{% if tool and tool.id == t.id %} is-selected{% endif %}"
                             type="button"
-                            data-skill="{{ t.id }}">
+                            data-skill="{{ t.id }}"
+                            data-tpl="{{ t.examplePrompt }}">
                       <span class="ab-card-icon">{{ t.icon }}</span>
                       <span class="ab-card-body">
                         <span class="ab-card-name">{{ t.name }}</span>
