@@ -391,6 +391,164 @@
 })();
 
 /* ---------------------------------------------------------------------------
+   Comutator de limbă (RO / EN)
+
+   Elementele cu data-i18n="key" → textContent tradus.
+   Elementele cu data-i18n-ph="key" → atribut placeholder tradus.
+   La prima trecere în EN, textul RO original e salvat, ca să poată fi restaurat.
+--------------------------------------------------------------------------- */
+(function () {
+  "use strict";
+
+  var DICT_EN = {
+    // Navigation
+    "nav-home": "Home", "nav-projects": "My projects", "nav-new": "New project", "nav-help": "Help",
+    // Sidebar promo
+    "promo-title": "Got a page idea?", "promo-text": "It takes under a minute to start.", "promo-btn": "Start new project",
+    // Sidebar last action
+    "last-head": "Last action", "last-empty": "No projects created yet.",
+    // Status labels
+    "status-queued": "Queued", "status-running": "Building", "status-draft": "Draft",
+    "status-handed-off": "With Dev team", "status-done": "Done", "status-failed": "Failed",
+    // Topbar
+    "search-ph": "Search a project…",
+    // Project list
+    "badge-dev": "With Dev", "badge-draft": "Draft", "badge-done": "Done", "badge-work": "Building",
+    "btn-resume": "Resume project",
+    "projects-empty": "No projects yet. Start one from “+ New project”.",
+    // Projects page
+    "page-projects": "My projects",
+    "projects-sub": "Drafts can be resumed; what went to Dev stays in the log.",
+    // Stats
+    "stat-total": "projects", "stat-draft": "draft", "stat-dev": "with Dev team", "stat-time": "avg. time",
+    "viz-title": "Projects started per week",
+    "viz-sub-pre": "Last 8 weeks", "viz-sub-post": "total",
+    "viz-table-sum": "See figures as a table",
+    "viz-th-week": "Week", "viz-th-projects": "Projects",
+    "viz-empty-1": "No projects started yet.",
+    "viz-empty-2": "The first one appears here as soon as you build it.",
+    // Home page
+    "panel-recent": "Recent projects", "panel-all": "See all",
+    "hero-start": "Start new project", "hero-discover": "Discover templates",
+    "hero-greeting": "What are we building today, ", "hero-sub": "Choose a starting point.",
+    "discover-title": "Discover templates for any internal need",
+    "discover-lede": "Pick a starting point and adjust it in conversation. Every template starts a new project with the description pre-filled.",
+    "filter-all": "All", "filter-info": "Information", "filter-form": "Forms",
+    "filter-event": "Events", "filter-hr": "HR & onboarding",
+    "discover-foot": "Can’t find what you need? Describe the page yourself →",
+    "tpl-go": "Start →", "kind-form": "Collection form", "kind-info": "Info page",
+    // Template card names & tags
+    "tpl-green-week-name": "Green Week — Sign-ups", "tpl-green-week-tag": "Campaign",
+    "tpl-onboarding-name": "Guide for New Colleagues", "tpl-onboarding-tag": "Onboarding",
+    "tpl-canteen-name": "Canteen Survey", "tpl-canteen-tag": "Survey",
+    "tpl-concediu-name": "Leave Policy", "tpl-concediu-tag": "Announcement",
+    "tpl-teambuilding-name": "Team Building — Sign-ups", "tpl-teambuilding-tag": "Event",
+    "tpl-dept-name": "Department Presentation", "tpl-dept-tag": "Team",
+    "tpl-faq-name": "Frequently Asked Questions", "tpl-faq-tag": "FAQ",
+    "tpl-feedback-name": "Post-Training Feedback", "tpl-feedback-tag": "Feedback",
+    "tpl-quarterly-name": "Quarterly Results", "tpl-quarterly-tag": "Report",
+    "tpl-conference-name": "Conference Program", "tpl-conference-tag": "Schedule",
+    "tpl-it-name": "IT Equipment Request", "tpl-it-tag": "Request",
+    "tpl-benefits-name": "Benefits Guide", "tpl-benefits-tag": "Benefits",
+    "tpl-courses-name": "Course Registration", "tpl-courses-tag": "Courses",
+    "tpl-contest-name": "Contest Rules", "tpl-contest-tag": "Rules",
+    "tpl-referral-name": "Refer a Candidate", "tpl-referral-tag": "Recruitment",
+    "tpl-remote-name": "Remote Work Rules", "tpl-remote-tag": "Guide",
+    // Builder (details page)
+    "builder-t1": "You’re building", "builder-t2": "your page",
+    "tab-templates": "Templates",
+    "input-ph": "Describe the page you want…",
+    "input-hint": "Enter sends · Shift+Enter new line",
+    "preview-label": "Preview", "handoff-btn": "Send to Dev team", "back-home": "← Home",
+    // Tool cards (builder)
+    "tool-dashboard-name": "Dashboard", "tool-dashboard-desc": "KPIs, charts and a detail table — all on one screen.",
+    "tool-chart-name": "Chart", "tool-chart-desc": "An interactive chart to visualize trends or compare data.",
+    "tool-report-name": "Report", "tool-report-desc": "A management report with key figures and commentary.",
+    "tool-data-table-name": "Data table", "tool-data-table-desc": "A filterable table for browsing large datasets.",
+    "tool-info-page-name": "Info page", "tool-info-page-desc": "An informational page with sections and a clear call to action.",
+    "tool-form-page-name": "Form page", "tool-form-page-desc": "A form with validation and a confirmation message on submit.",
+    "tool-slides-name": "Slides", "tool-slides-desc": "A slide deck for presentations and meetings.",
+    // Result page
+    "result-title": "Your page is ready",
+    "result-sub": "Take a look. If it looks good, send it to the Dev team.",
+    "result-send": "Send to Dev team", "result-edit": "I want to change something",
+    "result-home": "↩ Home",
+    "result-note": "The project is saved as a draft — you can resume it from the Home page.",
+    "side-panel-title": "Nothing publishes itself",
+    "side-panel-text": "The Dev team receives the code, reviews it, and publishes it on the intranet. You’ll get a notification when it’s live.",
+    "step-1": "You send the project", "step-2": "Dev reviews", "step-3": "Published on intranet",
+    // Generating page
+    "gen-sub": "It takes about a minute. You can leave the tab open.",
+    "gen-note": "Running in an isolated container, just for your project.",
+    // Handoff page
+    "handoff-title": "Sent to the Dev team",
+    "handoff-panel-title": "What the Dev team received",
+    "kv-skill": "SKILL USED", "kv-requester": "REQUESTER", "kv-files": "FILES",
+    "kv-session": "SESSION", "kv-closed": "closed",
+    "inset-note": "The filled fields and generated code are attached to the request. The container was automatically deleted.",
+    "timeline-title": "Request status",
+    "tl-generated": "Generated in sandbox", "tl-handed": "Handed to Dev team",
+    "tl-review": "Technical review in progress", "tl-review-meta": "estimated: 1 business day",
+    "tl-publish": "Published on intranet", "tl-publish-meta": "by the Dev team only",
+    "handoff-btn-projects": "See request", "handoff-btn-new": "New project",
+    "no-bypass-title": "No bypass possible",
+    "no-bypass-1": "There is no publish button for business users — the only way out of Libra Maker is a request to Dev.",
+    "no-bypass-2": "There is no “advanced” mode, terminal or free prompt. The two skills are all that can run.",
+    "no-bypass-3": "Every session stays in the log: who, which skill, which fields, which code.",
+  };
+
+  var savedRO = {}, savedROPH = {};
+
+  function applyLang(lang) {
+    var en = lang === "en";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-i18n]"), function (el) {
+      var key = el.getAttribute("data-i18n");
+      if (en) {
+        if (!Object.prototype.hasOwnProperty.call(savedRO, key)) savedRO[key] = el.textContent;
+        if (DICT_EN[key] !== undefined) el.textContent = DICT_EN[key];
+      } else {
+        if (Object.prototype.hasOwnProperty.call(savedRO, key)) el.textContent = savedRO[key];
+      }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-i18n-ph]"), function (el) {
+      var key = el.getAttribute("data-i18n-ph");
+      if (en) {
+        if (!Object.prototype.hasOwnProperty.call(savedROPH, key)) savedROPH[key] = el.getAttribute("placeholder") || "";
+        if (DICT_EN[key] !== undefined) el.setAttribute("placeholder", DICT_EN[key]);
+      } else {
+        if (Object.prototype.hasOwnProperty.call(savedROPH, key)) el.setAttribute("placeholder", savedROPH[key]);
+      }
+    });
+  }
+
+  var langBtns = document.querySelectorAll("[data-lang-set]");
+  if (!langBtns.length) return;
+
+  var lang = "ro";
+  try { lang = localStorage.getItem("lm-lang") || "ro"; } catch (e) {}
+
+  function syncBtns() {
+    Array.prototype.forEach.call(langBtns, function (btn) {
+      btn.setAttribute("aria-pressed", btn.getAttribute("data-lang-set") === lang ? "true" : "false");
+    });
+  }
+
+  function setLang(l) {
+    lang = l;
+    applyLang(l);
+    syncBtns();
+    try { localStorage.setItem("lm-lang", l); } catch (e) {}
+  }
+
+  Array.prototype.forEach.call(langBtns, function (btn) {
+    btn.addEventListener("click", function () { setLang(btn.getAttribute("data-lang-set")); });
+  });
+
+  if (lang === "en") applyLang("en");
+  syncBtns();
+})();
+
+/* ---------------------------------------------------------------------------
    Animatia de numarare din casetele de activitate
 
    Cifra creste de la 0 la valoarea reala. Valoarea finala e deja in HTML, deci
