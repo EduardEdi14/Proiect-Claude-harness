@@ -468,6 +468,10 @@ class Store {
     );
   }
 
+  async deleteProject(id) {
+    await this.pool.query('DELETE FROM projects WHERE id=$1', [id]);
+  }
+
   async stats(userID) {
     const r = await this.pool.query(
       `SELECT

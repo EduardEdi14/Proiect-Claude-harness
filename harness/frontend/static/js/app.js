@@ -716,3 +716,369 @@
   var preset = wrap.getAttribute("data-preset") || "";
   if (preset) { input.value = preset; resize(); syncSend(); }
 })();
+
+/* ============================================================
+   4. Chat Preview — split-pane cu chat la stânga și previzualizare live la dreapta.
+      Rulează doar pe paginile cu .chat-split.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var container = document.querySelector(".chat-split");
+  if (!container) return;
+
+  var list        = document.getElementById("cs-messages");
+  var input       = document.getElementById("cs-input");
+  var sendBtn     = document.getElementById("cs-send");
+  var iframeEl    = document.getElementById("cs-iframe");
+  var placeholder = document.getElementById("cs-placeholder");
+  var actionsEl   = document.getElementById("cs-preview-actions");
+  var handoffBtn  = document.getElementById("cs-handoff-btn");
+
+  if (!list || !input || !sendBtn) return;
+
+  var initials    = container.getAttribute("data-initials") || "EU";
+  var skill       = container.getAttribute("data-skill")    || "";
+  var configurat  = container.getAttribute("data-configurat") === "1";
+  var resume      = container.getAttribute("data-resume") === "1";
+
+  var currentHtml   = "";
+  var currentProjId = container.getAttribute("data-project-id") || null;
+  var firstBuild    = true;
+  var busy          = false;
+  var typingEl      = null;
+
+  // ── Mesaj de bun-venit ────────────────────────────────────────────────
+  function init() {
+    // Dacă e un proiect reluat, intrăm direct în modul split cu pagina salvată
+    if (resume && currentProjId) {
+      firstBuild = false;
+      var messagesWrap = document.getElementById("cs-messages-wrap");
+      var gallery      = document.getElementById("ab-gallery");
+      var rightPanel   = document.getElementById("cs-right");
+      if (messagesWrap) messagesWrap.hidden = false;
+      if (gallery)      gallery.hidden      = true;
+      if (rightPanel)   rightPanel.hidden   = false;
+      container.classList.add("is-split");
+      if (actionsEl) actionsEl.hidden = false;
+      // Încărcăm HTML-ul și istoricul conversației în paralel
+      Promise.all([
+        fetch("/proiect/" + currentProjId + "/pagina").then(function(r) { return r.ok ? r.text() : null; }),
+        fetch("/proiect/" + currentProjId + "/chat").then(function(r) { return r.ok ? r.json() : []; }),
+      ]).then(function(results) {
+        var h        = results[0];
+        var messages = results[1] || [];
+
+        // Redăm istoricul conversației
+        messages.forEach(function(m) {
+          if (m.role === "user") addUser(m.text || "");
+          else addVera(esc(m.text || ""));
+        });
+
+        // Mesaj dacă nu există istoric salvat
+        if (!messages.length) {
+          addVera("Ai reluat proiectul. Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva.");
+        }
+
+        // Afișăm pagina în iframe
+        if (h) {
+          currentHtml = h;
+          if (placeholder) placeholder.hidden = true;
+          if (iframeEl) { iframeEl.hidden = false; iframeEl.srcdoc = h; }
+        }
+      }).catch(function() {
+        addVera("Ai reluat proiectul. Spune-mi dacă vrei să schimb ceva.");
+      });
+      input.focus();
+      return;
+    }
+
+    if (!configurat) {
+      addVera(
+        "Asistentul nu este disponibil momentan. " +
+        "Contactați administratorul pentru a configura cheia de API."
+      );
+      return;
+    }
+    addVera(
+      "Bună! Sunt Vera, asistentul tău Libra Maker. " +
+      "Spune-mi ce pagină vrei să construiesc — câteva rânduri sunt suficiente — " +
+      "și o ai gata în câteva clipe."
+    );
+    input.focus();
+  }
+
+  // ── Resize textarea ───────────────────────────────────────────────────
+  function resize() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 150) + "px";
+  }
+
+  function syncSend() {
+    sendBtn.disabled = busy || input.value.trim().length === 0;
+  }
+
+  input.addEventListener("input", function () { resize(); syncSend(); });
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) doSend();
+    }
+  });
+  sendBtn.addEventListener("click", doSend);
+
+  // ── Handoff ───────────────────────────────────────────────────────────
+  if (handoffBtn) {
+    handoffBtn.addEventListener("click", function () {
+      if (!currentProjId) return;
+      // Submit ca form simplu — serverul face redirect la pagina de confirmare.
+      var form = document.createElement("form");
+      form.method = "POST";
+      form.action = "/proiect/" + currentProjId + "/handoff";
+      document.body.appendChild(form);
+      form.submit();
+    });
+  }
+
+  // ── Trimitere mesaj ───────────────────────────────────────────────────
+  function doSend() {
+    var text = input.value.trim();
+    if (!text || busy) return;
+
+    // La primul mesaj: afișăm zona de chat și ascundem galeria
+    if (firstBuild) {
+      var messagesWrap = document.getElementById("cs-messages-wrap");
+      var gallery      = document.getElementById("ab-gallery");
+      if (messagesWrap) messagesWrap.hidden = false;
+      if (gallery)      gallery.hidden      = true;
+    }
+
+    addUser(text);
+    input.value = "";
+    resize();
+    syncSend();
+
+    if (firstBuild) {
+      doBuild(text);
+    } else {
+      doModifica(text);
+    }
+  }
+
+  // ── Prima construire ──────────────────────────────────────────────────
+  async function doBuild(text) {
+    busy = true;
+    syncSend();
+    showTyping();
+
+    // Derivam un nume scurt din primele cuvinte ale mesajului.
+    var words = text.split(/\s+/).slice(0, 6).join(" ");
+    var name  = (words.length < text.length ? words.trimEnd() + "…" : words).slice(0, 80);
+    if (name.length < 3) name = "Pagina mea";
+
+    try {
+      var r = await fetch("/asistent/construieste", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nume: name, descriere: text, skill: skill }),
+      });
+      removeTyping();
+      var d = await r.json();
+      if (!r.ok) {
+        addVera(esc(d.eroare || "Nu am putut construi pagina. Încearcă din nou."));
+        return;
+      }
+      currentHtml   = d.html;
+      currentProjId = d.proiectId;
+      firstBuild    = false;
+      showPreview(d.html);
+      addVera(
+        "Gata! Pagina ta e vizibilă în dreapta. " +
+        "Spune-mi dacă vrei să schimb ceva — culori, texte, structură."
+      );
+      if (actionsEl) actionsEl.hidden = false;
+    } catch (err) {
+      removeTyping();
+      addVera("Conexiunea a căzut. Încearcă din nou.");
+    } finally {
+      busy = false;
+      syncSend();
+    }
+  }
+
+  // ── Modificare ────────────────────────────────────────────────────────
+  async function doModifica(text) {
+    busy = true;
+    syncSend();
+    showTyping();
+
+    try {
+      var r = await fetch("/asistent/modifica", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mesaj:       text,
+          html_curent: currentHtml,
+          proiect_id:  currentProjId,
+        }),
+      });
+      removeTyping();
+      var d = await r.json();
+      if (!r.ok) {
+        addVera(esc(d.eroare || "Nu am putut modifica pagina. Încearcă din nou."));
+        return;
+      }
+      currentHtml = d.html;
+      if (d.proiectId) currentProjId = d.proiectId;
+      showPreview(d.html);
+      addVera(esc(d.raspuns || "Am aplicat modificările. Cum arată acum?"));
+    } catch (err) {
+      removeTyping();
+      addVera("Conexiunea a căzut. Încearcă din nou.");
+    } finally {
+      busy = false;
+      syncSend();
+    }
+  }
+
+  // ── Previzualizare ────────────────────────────────────────────────────
+  function showPreview(html) {
+    // Afișăm panoul din dreapta și activăm modul split
+    var rightPanel   = document.getElementById("cs-right");
+    var messagesWrap = document.getElementById("cs-messages-wrap");
+    var gallery      = document.getElementById("ab-gallery");
+    if (rightPanel)   rightPanel.hidden   = false;
+    if (messagesWrap) messagesWrap.hidden = false;
+    if (gallery)      gallery.hidden      = true;
+    container.classList.add("is-split");
+
+    if (placeholder) placeholder.hidden = true;
+    if (iframeEl) {
+      iframeEl.hidden = false;
+      iframeEl.srcdoc = html;
+    }
+  }
+
+  // ── Bule de chat ──────────────────────────────────────────────────────
+  function addVera(html) {
+    var d = document.createElement("div");
+    d.className = "bubble bubble--bot";
+    d.innerHTML =
+      "<div class='bubble-avatar'>" + veraAvatar() + "</div>" +
+      "<div class='bubble-body'>" + html + "</div>";
+    list.appendChild(d);
+    scrollDown();
+  }
+
+  function addUser(text) {
+    var d = document.createElement("div");
+    d.className = "bubble bubble--user";
+    d.innerHTML =
+      "<div class='bubble-avatar bubble-avatar--user'>" + esc(initials) + "</div>" +
+      "<div class='bubble-body'>" + esc(text).replace(/\n/g, "<br>") + "</div>";
+    list.appendChild(d);
+    scrollDown();
+  }
+
+  function showTyping() {
+    typingEl = document.createElement("div");
+    typingEl.className = "bubble bubble--bot typing-bubble";
+    typingEl.innerHTML =
+      "<div class='bubble-avatar'>" + veraAvatar() + "</div>" +
+      "<div class='bubble-body'>" +
+        "<span class='typing-dot'></span>" +
+        "<span class='typing-dot'></span>" +
+        "<span class='typing-dot'></span>" +
+      "</div>";
+    list.appendChild(typingEl);
+    scrollDown();
+  }
+
+  function removeTyping() {
+    if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+    typingEl = null;
+  }
+
+  function scrollDown() { list.scrollTop = list.scrollHeight; }
+
+  function veraAvatar() {
+    return "<div class='lm-mark' style='width:16px;height:16px'>" +
+      "<div class='lm-a1'></div>" +
+      "<div class='lm-row'><div class='lm-a2'></div><div class='lm-a3'></div></div>" +
+      "</div>";
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  init();
+})();
+
+/* ============================================================
+   5. Modal confirmare ștergere proiect
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var overlay    = document.getElementById("modal-sterge");
+  var nameEl     = document.getElementById("modal-sterge-name");
+  var cancelBtn  = document.getElementById("modal-sterge-cancel");
+  var confirmBtn = document.getElementById("modal-sterge-confirm");
+  if (!overlay) return;
+
+  var pendingId   = null;
+  var pendingRow  = null;
+
+  function open(id, name, row) {
+    pendingId   = id;
+    pendingRow  = row;
+    nameEl.textContent = name;
+    overlay.hidden = false;
+    confirmBtn.focus();
+  }
+
+  function close() {
+    overlay.hidden = true;
+    pendingId  = null;
+    pendingRow = null;
+  }
+
+  // Delegare click pe orice buton .js-sterge-proiect din pagina
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest(".js-sterge-proiect");
+    if (!btn) return;
+    open(btn.getAttribute("data-id"), btn.getAttribute("data-name"), btn.closest(".project-row"));
+  });
+
+  cancelBtn.addEventListener("click", close);
+  overlay.addEventListener("click", function (e) {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (!overlay.hidden && e.key === "Escape") close();
+  });
+
+  confirmBtn.addEventListener("click", function () {
+    if (!pendingId) return;
+    var id  = pendingId;
+    var row = pendingRow;
+    close();
+
+    fetch("/proiect/" + id + "/sterge", { method: "POST" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.ok && row) {
+          row.style.transition = "opacity .25s, transform .25s";
+          row.style.opacity    = "0";
+          row.style.transform  = "translateX(12px)";
+          setTimeout(function () { row.remove(); }, 260);
+        }
+      })
+      .catch(function () {
+        alert("Nu am putut șterge proiectul. Încearcă din nou.");
+      });
+  });
+})();

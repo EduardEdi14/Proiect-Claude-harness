@@ -120,6 +120,10 @@ class MemoryStore {
     this._build(id);
   }
 
+  async deleteProject(id) {
+    this._projects.delete(id);
+  }
+
   async handOff(id) {
     const p = this._projects.get(id);
     if (!p) return;

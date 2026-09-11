@@ -264,19 +264,25 @@ app.get('/proiect/:id/detalii', auth(async (req, res) => {
   const tool = toolByID(p.skillID);
   if (!tool) return res.redirect('/proiect-nou');
 
+  const initialHtml = agent.citestePagina(p.workspacePath) || '';
+
   return res.render('pages/details.html', {
-    title:       p.name,
-    nav:         'proiect-nou',
-    sidebarFoot: 'restricted',
-    user:        req.user,
+    title:        p.name,
+    nav:          'proiect-nou',
+    sidebarFoot:  'restricted',
+    user:         req.user,
     tool,
-    tools:       TOOLS,
-    skillPreset: true,
-    preset:      '',
-    projectID:   p.id,
-    name:        p.name,
-    description: p.description,
-    error:       '',
+    tools:        TOOLS,
+    skillPreset:  true,
+    preset:       '',
+    projectID:    p.id,
+    name:         p.name,
+    description:  p.description,
+    error:        '',
+    configurat:   agent.isConfigured(),
+    agentNume:    agent.NUME,
+    model:        agent.DEPLOYMENT,
+    initialHtml,
   });
 }));
 
@@ -367,8 +373,53 @@ app.post('/asistent/construieste', auth(async (req, res, next) => {
     // container. De acolo poate fi reluata si trimisa echipei de dezvoltare.
     const p = await store.createBuilt(req.user.id, skill, nume, descriere, durata);
     agent.salveazaPagina(p.workspacePath, r.html, { nume, descriere, skill });
+    agent.salveazaChat(p.workspacePath, [
+      { role: 'user', text: descriere },
+      { role: 'vera', text: 'Gata! Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva — culori, texte, structură.' },
+    ]);
 
     return res.json({ ...r, proiectId: p.id, proiectURL: `/proiect/${p.id}` });
+  } catch (err) { next(err); }
+}));
+
+// POST /asistent/modifica — aplica o modificare pe o pagina deja construita
+app.post('/asistent/modifica', auth(async (req, res, next) => {
+  if (!agent.isConfigured()) {
+    return res.status(503).json({ eroare: 'Asistentul nu e configurat pe acest server.' });
+  }
+  try {
+    const mesaj      = (req.body.mesaj       || '').trim().slice(0, 4000);
+    const htmlCurent = (req.body.html_curent  || '').trim();
+    const proiectId  = (req.body.proiect_id   || '').trim();
+
+    if (!mesaj)      return res.status(400).json({ eroare: 'Mesaj gol.' });
+    if (!htmlCurent) return res.status(400).json({ eroare: 'HTML curent lipseste.' });
+
+    const r = await agent.modifica(mesaj, htmlCurent);
+
+    // Actualizeaza fisierul in workspace-ul proiectului, daca ID-ul e cunoscut.
+    if (proiectId) {
+      try {
+        const p = await store.getProject(proiectId);
+        if (p && p.userID === req.user.id) {
+          agent.salveazaPagina(p.workspacePath, r.html, {
+            nume:      p.name,
+            descriere: p.description,
+            skill:     p.skillID,
+          });
+          const chat = agent.citesteChat(p.workspacePath);
+          chat.push({ role: 'user', text: mesaj });
+          chat.push({ role: 'vera', text: r.raspuns || 'Am aplicat modificările. Cum arată acum?' });
+          agent.salveazaChat(p.workspacePath, chat);
+        }
+      } catch (_) { /* salvarea e best-effort; eroarea nu opreste raspunsul */ }
+    }
+
+    return res.json({
+      ...r,
+      proiectId:  proiectId || null,
+      proiectURL: proiectId ? `/proiect/${proiectId}` : null,
+    });
   } catch (err) { next(err); }
 }));
 
@@ -390,6 +441,21 @@ app.get('/proiect/:id/pagina', auth(async (req, res, next) => {
     res.set('X-Content-Type-Options', 'nosniff');
     return res.send(html);
   } catch (err) { next(err); }
+}));
+
+// POST /proiect/:id/sterge — sterge proiectul utilizatorului curent
+app.post('/proiect/:id/sterge', auth(async (req, res) => {
+  const p = await store.getProject(req.params.id);
+  if (!p || p.userID !== req.user.id) return res.status(404).json({ eroare: 'Proiect negăsit.' });
+  await store.deleteProject(p.id);
+  return res.json({ ok: true });
+}));
+
+// GET /proiect/:id/chat — istoricul conversatiei salvat pentru un proiect
+app.get('/proiect/:id/chat', auth(async (req, res) => {
+  const p = await store.getProject(req.params.id);
+  if (!p || p.userID !== req.user.id) return res.status(404).json([]);
+  return res.json(agent.citesteChat(p.workspacePath));
 }));
 
 // POST /asistent/reset — porneste o discutie noua

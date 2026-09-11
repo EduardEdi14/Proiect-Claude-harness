@@ -19,5 +19,26 @@ document.documentElement.setAttribute("data-theme",t==="dark"||t==="light"?t:"")
 </head>
 <body>
 {% block body %}{% endblock %}
+
+{# ── Modal confirmare ștergere proiect ── #}
+<div id="modal-sterge" class="modal-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="modal-sterge-titlu">
+  <div class="modal-box">
+    <div class="modal-icon modal-icon--danger">
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2 4h12M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4M6 7v5M10 7v5M3 4l1 9.5A.5.5 0 004.5 14h7a.5.5 0 00.5-.5L13 4"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2 class="modal-title" id="modal-sterge-titlu">Ștergi proiectul?</h2>
+    <p class="modal-body">
+      Proiectul <strong id="modal-sterge-name"></strong> va fi șters definitiv.
+      Această acțiune nu poate fi anulată.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn--ghost btn--md" id="modal-sterge-cancel">Anulează</button>
+      <button class="btn btn--danger btn--md" id="modal-sterge-confirm">Da, șterge</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

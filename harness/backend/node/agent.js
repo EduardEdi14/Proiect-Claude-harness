@@ -58,6 +58,20 @@ function citestePagina(workspacePath) {
   return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null;
 }
 
+/** Salveaza istoricul conversatiei ca JSON in workspace-ul proiectului. */
+function salveazaChat(workspacePath, mesaje) {
+  const dir = path.join(RADACINA_WS, workspacePath);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'chat.json'), JSON.stringify(mesaje), 'utf8');
+}
+
+/** Citeste istoricul conversatiei; [] daca nu exista. */
+function citesteChat(workspacePath) {
+  const f = path.join(RADACINA_WS, workspacePath, 'chat.json');
+  if (!fs.existsSync(f)) return [];
+  try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return []; }
+}
+
 const BASE_URL   = (process.env.CLAUDE_DATA_URL || '').replace(/\/+$/, '');
 const API_KEY    = process.env.CLAUDE_DATA_API_KEY || '';
 const DEPLOYMENT = process.env.CLAUDE_DEPLOYMENT_NAME || '';
@@ -266,8 +280,48 @@ async function construieste({ nume, descriere, skill }) {
   return { html, cost: calculeazaCost(r.usage, r.model) };
 }
 
+/**
+ * Modifica pagina HTML existenta pe baza unui mesaj de la utilizator.
+ * Returneaza HTML-ul complet actualizat + un mesaj de confirmare.
+ *
+ * @param {string} mesaj     - Ce doreste utilizatorul sa schimbe.
+ * @param {string} htmlCurent - Continutul HTML curent al paginii.
+ */
+async function modifica(mesaj, htmlCurent) {
+  const prompt = [
+    'Iata pagina HTML curenta:',
+    '',
+    htmlCurent,
+    '',
+    'Utilizatorul vrea sa modifice pagina astfel:',
+    mesaj,
+    '',
+    'Returneaza DOAR HTML-ul complet actualizat, fara explicatii, fara blocuri de cod cu ```.',
+  ].join('\n');
+
+  const stream = getClient().messages.stream({
+    model:      DEPLOYMENT,
+    max_tokens: 16000,
+    system: [{ type: 'text', text: SISTEM_CONSTRUIRE, cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const r = await stream.finalMessage();
+  let html = r.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+
+  // Scoatem gardul de cod daca modelul l-a adaugat totusi.
+  const gard = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
+  if (gard) html = gard[1].trim();
+
+  return {
+    html,
+    raspuns: 'Am aplicat modificările. Cum arată acum?',
+    cost:    calculeazaCost(r.usage, r.model),
+  };
+}
+
 module.exports = {
-  isConfigured, lipsuri, raspunde, construieste, calculeazaCost,
-  salveazaPagina, citestePagina,
+  isConfigured, lipsuri, raspunde, construieste, modifica, calculeazaCost,
+  salveazaPagina, citestePagina, salveazaChat, citesteChat,
   DEPLOYMENT, NUME: persona.NUME,
 };
