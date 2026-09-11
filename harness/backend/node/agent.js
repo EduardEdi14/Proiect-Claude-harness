@@ -280,41 +280,70 @@ async function construieste({ nume, descriere, skill }) {
   return { html, cost: calculeazaCost(r.usage, r.model) };
 }
 
+const SISTEM_MODIFICA = `Ești un asistent care modifică pagini HTML interne pentru intranetul Libra Bank.
+
+Primești pagina HTML curentă și un mesaj de la utilizator.
+
+REGULI STRICTE — respectă-le în ordine:
+
+1. Dacă mesajul este CLAR și SPECIFIC (ex: "schimbă titlul în X", "adaugă un buton roșu", "mută secțiunea sus"):
+   → Returnează HTML-ul complet actualizat. Primul caracter trebuie să fie "<".
+
+2. Dacă mesajul este AMBIGUU, VAGUE sau pur CONVERSAȚIONAL
+   (ex: "da", "nu", "ok", "bine", "hmm", "mai bine", "schimbă ceva", "fă mai frumos", "nu știu"):
+   → NU modifica HTML-ul.
+   → Răspunde DOAR cu o întrebare de clarificare, începând exact cu "CLARIFICARE: ".
+   → Ex: "CLARIFICARE: Ce anume dorești să schimb? Culori, texte, structura paginii?"
+
+3. Dacă utilizatorul confirmă o modificare propusă anterior (ex: "da, aia", "exact", "perfect"):
+   → Cere să reformuleze concret CE să schimbi, pentru că nu ai memorie a propunerilor anterioare.
+   → Începe cu "CLARIFICARE: ".
+
+Răspunzi fie cu HTML complet (începând cu "<"), fie cu "CLARIFICARE: ..." — nimic altceva.
+Fără explicații, fără blocuri de cod cu \`\`\`.`;
+
 /**
  * Modifica pagina HTML existenta pe baza unui mesaj de la utilizator.
- * Returneaza HTML-ul complet actualizat + un mesaj de confirmare.
+ * Daca mesajul e ambiguu, returneaza o cerere de clarificare (html: null).
  *
- * @param {string} mesaj     - Ce doreste utilizatorul sa schimbe.
+ * @param {string} mesaj      - Ce doreste utilizatorul sa schimbe.
  * @param {string} htmlCurent - Continutul HTML curent al paginii.
  */
 async function modifica(mesaj, htmlCurent) {
   const prompt = [
-    'Iata pagina HTML curenta:',
+    'Pagina HTML curentă:',
     '',
     htmlCurent,
     '',
-    'Utilizatorul vrea sa modifice pagina astfel:',
+    'Mesajul utilizatorului:',
     mesaj,
-    '',
-    'Returneaza DOAR HTML-ul complet actualizat, fara explicatii, fara blocuri de cod cu ```.',
   ].join('\n');
 
   const stream = getClient().messages.stream({
     model:      DEPLOYMENT,
     max_tokens: 16000,
-    system: [{ type: 'text', text: SISTEM_CONSTRUIRE, cache_control: { type: 'ephemeral' } }],
+    system: [{ type: 'text', text: SISTEM_MODIFICA, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: prompt }],
   });
 
   const r = await stream.finalMessage();
-  let html = r.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+  let text = r.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+
+  // Agentul cere clarificari — nu modifica HTML-ul
+  if (text.startsWith('CLARIFICARE:')) {
+    return {
+      html:    null,
+      raspuns: text.replace(/^CLARIFICARE:\s*/, '').trim(),
+      cost:    calculeazaCost(r.usage, r.model),
+    };
+  }
 
   // Scoatem gardul de cod daca modelul l-a adaugat totusi.
-  const gard = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
-  if (gard) html = gard[1].trim();
+  const gard = text.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
+  if (gard) text = gard[1].trim();
 
   return {
-    html,
+    html:    text,
     raspuns: 'Am aplicat modificările. Cum arată acum?',
     cost:    calculeazaCost(r.usage, r.model),
   };
