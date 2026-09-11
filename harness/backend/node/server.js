@@ -423,10 +423,10 @@ app.post('/asistent/construieste', auth(async (req, res, next) => {
     const displayText = req.body.display_text || descriere;
     agent.salveazaChat(p.workspacePath, [
       { role: 'user', text: displayText },
-      { role: 'vera', text: 'Gata! Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva — culori, texte, structură.' },
+      { role: 'vera', text: 'Gata! Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva — culori, texte, structură.', cost: r.cost, durata },
     ]);
 
-    return res.json({ ...r, proiectId: p.id, proiectURL: `/proiect/${p.id}` });
+    return res.json({ ...r, proiectId: p.id, proiectURL: `/proiect/${p.id}`, durata });
   } catch (err) { next(err); }
 }));
 
@@ -443,10 +443,12 @@ app.post('/asistent/modifica', auth(async (req, res, next) => {
     if (!mesaj)      return res.status(400).json({ eroare: 'Mesaj gol.' });
     if (!htmlCurent) return res.status(400).json({ eroare: 'HTML curent lipseste.' });
 
+    const inceputMod = Date.now();
     const r = await agent.modifica(mesaj, htmlCurent);
+    const durataMod = Math.max(1, Math.round((Date.now() - inceputMod) / 1000));
 
-    // Actualizeaza fisierul in workspace-ul proiectului, daca ID-ul e cunoscut.
-    if (proiectId) {
+    // Actualizeaza fisierul in workspace-ul proiectului doar daca s-a generat HTML nou.
+    if (proiectId && r.html) {
       try {
         const p = await store.getProject(proiectId);
         if (p && p.userID === req.user.id) {
@@ -458,7 +460,7 @@ app.post('/asistent/modifica', auth(async (req, res, next) => {
           const chat = agent.citesteChat(p.workspacePath);
           const displayTextModif = req.body.display_text || mesaj;
           chat.push({ role: 'user', text: displayTextModif });
-          chat.push({ role: 'vera', text: r.raspuns || 'Am aplicat modificările. Cum arată acum?' });
+          chat.push({ role: 'vera', text: r.raspuns || 'Am aplicat modificările. Cum arată acum?', cost: r.cost, durata: durataMod });
           agent.salveazaChat(p.workspacePath, chat);
         }
       } catch (_) { /* salvarea e best-effort; eroarea nu opreste raspunsul */ }
@@ -468,6 +470,7 @@ app.post('/asistent/modifica', auth(async (req, res, next) => {
       ...r,
       proiectId:  proiectId || null,
       proiectURL: proiectId ? `/proiect/${proiectId}` : null,
+      durata:     durataMod,
     });
   } catch (err) { next(err); }
 }));
@@ -504,7 +507,9 @@ app.post('/proiect/:id/sterge', auth(async (req, res) => {
 app.get('/proiect/:id/chat', auth(async (req, res) => {
   const p = await store.getProject(req.params.id);
   if (!p || p.userID !== req.user.id) return res.status(404).json([]);
-  return res.json(agent.citesteChat(p.workspacePath));
+  const chat = agent.citesteChat(p.workspacePath);
+  console.log('[chat] proiect', req.params.id, '→', chat.length, 'mesaje, primul cu cost:', !!(chat[1] && chat[1].cost));
+  return res.json(chat);
 }));
 
 // POST /asistent/reset — porneste o discutie noua

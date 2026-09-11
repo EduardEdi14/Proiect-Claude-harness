@@ -1033,7 +1033,7 @@
         // Redăm istoricul conversației
         messages.forEach(function(m) {
           if (m.role === "user") addUser(m.text || "");
-          else addVera(esc(m.text || ""));
+          else addVera(esc(m.text || ""), m.cost, m.durata);
         });
 
         // Mesaj dacă nu există istoric salvat
@@ -1195,7 +1195,8 @@
       showPreview(d.html);
       addVera(
         "Gata! Pagina ta e vizibilă în dreapta. " +
-        "Spune-mi dacă vrei să schimb ceva — culori, texte, structură."
+        "Spune-mi dacă vrei să schimb ceva — culori, texte, structură.",
+        d.cost, d.durata
       );
       if (actionsEl) actionsEl.hidden = false;
     } catch (err) {
@@ -1230,10 +1231,12 @@
         addVera(esc(d.eroare || "Nu am putut modifica pagina. Încearcă din nou."));
         return;
       }
-      currentHtml = d.html;
-      if (d.proiectId) currentProjId = d.proiectId;
-      showPreview(d.html);
-      addVera(esc(d.raspuns || "Am aplicat modificările. Cum arată acum?"));
+      if (d.html) {
+        currentHtml = d.html;
+        if (d.proiectId) currentProjId = d.proiectId;
+        showPreview(d.html);
+      }
+      addVera(esc(d.raspuns || "Am aplicat modificările. Cum arată acum?"), d.cost, d.durata);
     } catch (err) {
       removeTyping();
       addVera("Conexiunea a căzut. Încearcă din nou.");
@@ -1262,12 +1265,36 @@
   }
 
   // ── Bule de chat ──────────────────────────────────────────────────────
-  function addVera(html) {
+  function formatStats(cost, durata) {
+    if (!cost) return '';
+    var intrare = (cost.tokeniIntrare || 0).toLocaleString('en-US');
+    var iesire  = (cost.tokeniIesire  || 0).toLocaleString('en-US');
+    var usd     = cost.costUSD || 0;
+    var dolari  = usd < 0.001 ? '$' + usd.toFixed(5)
+                : usd < 0.01  ? '$' + usd.toFixed(4)
+                : usd < 0.1   ? '$' + usd.toFixed(3)
+                :                '$' + usd.toFixed(2);
+    var model   = (cost.model || '').replace(/^claude-/, '').replace(/-\d{8}$/, '');
+    var timp    = durata ? durata + 's' : '';
+    var cache   = (cost.tokeniCacheCitit || 0) > 0
+                  ? ' · cache ↩ ' + (cost.tokeniCacheCitit).toLocaleString('ro-RO')
+                  : '';
+    return '<div class="cost-pill">' +
+      '<span class="cost-model">' + esc(model) + '</span>' +
+      '<span class="cost-sep">·</span>' +
+      '<span>↑ ' + intrare + ' &darr; ' + iesire + ' tok' + cache + '</span>' +
+      '<span class="cost-sep">·</span>' +
+      '<span class="cost-usd">' + dolari + '</span>' +
+      (timp ? '<span class="cost-sep">·</span><span class="cost-timp">' + timp + '</span>' : '') +
+      '</div>';
+  }
+
+  function addVera(html, cost, durata) {
     var d = document.createElement("div");
     d.className = "bubble bubble--bot";
     d.innerHTML =
       "<div class='bubble-avatar'>" + veraAvatar() + "</div>" +
-      "<div class='bubble-body'>" + html + "</div>";
+      "<div class='bubble-body'>" + html + formatStats(cost, durata) + "</div>";
     list.appendChild(d);
     scrollDown();
   }
