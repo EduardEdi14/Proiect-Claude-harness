@@ -195,6 +195,12 @@ a{color:var(--link);text-decoration:none}
 .side-badge-head .lock{width:14px;height:16px;border-radius:3px;border:2px solid #fff}
 .side-badge-head span{font:700 11.5px var(--font);color:#fff;letter-spacing:.02em}
 .side-badge-text{font:400 11px/1.5 var(--font);color:rgba(255,255,255,.78)}
+.side-last{padding:16px;border-radius:14px;background:rgba(255,255,255,.12);display:flex;flex-direction:column;gap:7px}
+.side-last-head{font:700 10px/1 var(--font);color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase}
+.side-last-name{font:600 12.5px/1.4 var(--font);color:#fff;word-break:break-word}
+.side-last-meta{display:flex;align-items:center;gap:5px;font:400 11px/1 var(--font);color:rgba(255,255,255,.7)}
+.side-last-dot{opacity:.5}
+.side-last-empty{font:400 11px/1.5 var(--font);color:rgba(255,255,255,.6)}
 
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
 
@@ -698,8 +704,24 @@ a{color:var(--link);text-decoration:none}
 .auth-form .btn--block{margin-top:4px}
 
 /* ---------- comutator de tema (bara de sus) ---------- */
-.theme-toggle{
+.lang-toggle{
   margin-left:auto;
+  display:flex;align-items:center;gap:2px;padding:3px;
+  border-radius:999px;background:var(--neutral);border:1px solid var(--line-soft);
+}
+.lang-btn{
+  padding:0 9px;height:26px;display:flex;align-items:center;justify-content:center;
+  border:none;background:transparent;border-radius:999px;cursor:pointer;
+  color:var(--muted-2);font:700 11px/1 var(--font);letter-spacing:.04em;
+  transition:background .15s,color .15s,box-shadow .15s;
+}
+.lang-btn:hover{color:var(--ink)}
+.lang-btn[aria-pressed="true"]{
+  background:var(--surface);color:var(--ink);
+  box-shadow:0 1px 3px rgba(var(--ink-rgb),.14);
+}
+.lang-btn:focus-visible{outline:2px solid var(--red);outline-offset:1px}
+.theme-toggle{
   display:flex;align-items:center;gap:2px;padding:3px;
   border-radius:999px;background:var(--neutral);border:1px solid var(--line-soft);
 }

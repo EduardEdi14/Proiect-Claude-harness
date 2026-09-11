@@ -1,11 +1,17 @@
 {# Bara de sus: cautare HTMX + comutator de tema + utilizator. Variabile: user. #}
 <header class="topbar">
-  <input class="search" type="search" name="q" placeholder="Caută un proiect…"
+  <input class="search" type="search" name="q" placeholder="Caută un proiect…" data-i18n-ph="search-ph"
          hx-get="/proiecte/cauta"
          hx-trigger="keyup changed delay:300ms, search"
          hx-target="#project-list"
          hx-swap="innerHTML"
          aria-label="Caută un proiect">
+
+  {# Comutator de limbă #}
+  <div class="lang-toggle" role="group" aria-label="Limbă / Language">
+    <button class="lang-btn" type="button" data-lang-set="ro" aria-pressed="true">RO</button>
+    <button class="lang-btn" type="button" data-lang-set="en" aria-pressed="false">EN</button>
+  </div>
 
   {# Comutator de tema: doua butoane, starea activa marcata prin aria-pressed. #}
   <div class="theme-toggle" role="group" aria-label="Temă">
