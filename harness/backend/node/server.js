@@ -12,7 +12,7 @@ const bcrypt  = require('bcryptjs');
 const multer  = require('multer');
 const nunjucks = require('nunjucks');
 
-const { STATUS, TOOLS, toolByID, Store } = require('./store');
+const { STATUS, TOOLS, TEMPLATES, toolByID, Store } = require('./store');
 const { MemoryStore }                     = require('./store-memory');
 const agent                               = require('./agent');
 
@@ -220,11 +220,14 @@ app.get('/proiecte/cauta', auth(async (req, res) => {
   return res.render('partials/project-list.html', { projects: found });
 }));
 
-app.get('/ajutor', auth((req, res) => {
+app.get('/ajutor', auth(async (req, res) => {
+  const allProjects = await store.projects(req.user.id);
+  const lastProject = lastProjectInfo(allProjects);
   return res.render('pages/help.html', {
     title:       'Ajutor',
     nav:         'ajutor',
-    sidebarFoot: 'restricted',
+    sidebarFoot: 'lastaction',
+    lastProject,
     user:        req.user,
   });
 }));
@@ -254,6 +257,7 @@ app.get('/proiect-nou/detalii', auth(async (req, res) => {
     user:        req.user,
     tool,
     tools:       TOOLS,
+    templates:   TEMPLATES,
     skillPreset,
     preset,
     projectID:   '',
