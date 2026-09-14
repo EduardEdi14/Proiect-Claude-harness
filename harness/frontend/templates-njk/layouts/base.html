@@ -29,14 +29,13 @@ document.documentElement.setAttribute("data-theme",t==="dark"||t==="light"?t:"")
               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <h2 class="modal-title" id="modal-sterge-titlu">Ștergi proiectul?</h2>
+    <h2 class="modal-title" id="modal-sterge-titlu" data-i18n="modal-delete-title">Ștergi proiectul?</h2>
     <p class="modal-body">
-      Proiectul <strong id="modal-sterge-name"></strong> va fi șters definitiv.
-      Această acțiune nu poate fi anulată.
+      <span data-i18n="modal-delete-pre">Proiectul</span> <strong id="modal-sterge-name"></strong> <span data-i18n="modal-delete-post">va fi șters definitiv. Această acțiune nu poate fi anulată.</span>
     </p>
     <div class="modal-actions">
-      <button class="btn btn--ghost btn--md" id="modal-sterge-cancel">Anulează</button>
-      <button class="btn btn--danger btn--md" id="modal-sterge-confirm">Da, șterge</button>
+      <button class="btn btn--ghost btn--md" id="modal-sterge-cancel" data-i18n="modal-cancel">Anulează</button>
+      <button class="btn btn--danger btn--md" id="modal-sterge-confirm" data-i18n="modal-confirm">Da, șterge</button>
     </div>
   </div>
 </div>

@@ -21,8 +21,8 @@
     </div>
     {% elif sidebarFoot == 'restricted' %}
     <div class="side-badge">
-      <div class="side-badge-head"><span class="lock"></span><span>MOD RESTRICȚIONAT</span></div>
-      <div class="side-badge-text">Doar cele 2 instrumente aprobate. Fără acces la fișiere, rețea sau alte proiecte.</div>
+      <div class="side-badge-head"><span class="lock"></span><span data-i18n="restricted-head">MOD RESTRICȚIONAT</span></div>
+      <div class="side-badge-text" data-i18n="restricted-text">Doar cele 2 instrumente aprobate. Fără acces la fișiere, rețea sau alte proiecte.</div>
     </div>
     {% elif sidebarFoot == 'lastaction' %}
     <div class="side-last">
@@ -32,7 +32,7 @@
       <div class="side-last-meta">
         <span class="side-last-status" data-i18n="status-{{ lastProject.statusKey }}">{{ lastProject.statusLabel }}</span>
         <span class="side-last-dot">·</span>
-        <span>{{ lastProject.timeAgo }}</span>
+        <span data-ago-unit="{{ lastProject.agoUnit }}" data-ago-count="{{ lastProject.agoCount }}">{{ lastProject.timeAgo }}</span>
       </div>
       {% else %}
       <div class="side-last-empty" data-i18n="last-empty">Niciun proiect creat încă.</div>

@@ -51,20 +51,42 @@ app.use(session({
 
 // ---------- helpers ----------
 
-function timeAgo(date) {
-  if (!date) return '';
+/**
+ * Relative time as {unit, count}, so the client can render it in either
+ * language. agoTextRO() turns it back into the Romanian wording.
+ */
+function agoParts(date) {
+  if (!date) return null;
   const diff = Date.now() - new Date(date).getTime();
   const min  = Math.floor(diff / 60000);
-  if (min < 1)  return 'acum';
-  if (min < 60) return `acum ${min} min`;
+  if (min < 1)  return { unit: 'now',       count: 0 };
+  if (min < 60) return { unit: 'min',       count: min };
   const h = Math.floor(min / 60);
-  if (h < 24)   return `acum ${h}h`;
+  if (h < 24)   return { unit: 'hour',      count: h };
   const d = Math.floor(h / 24);
-  if (d === 1)  return 'ieri';
-  if (d < 30)   return `acum ${d} zile`;
+  if (d === 1)  return { unit: 'yesterday', count: 1 };
+  if (d < 30)   return { unit: 'day',       count: d };
   const m = Math.floor(d / 30);
-  if (m < 12)   return `acum ${m} luni`;
-  return `acum ${Math.floor(m / 12)} ani`;
+  if (m < 12)   return { unit: 'month',     count: m };
+  return { unit: 'year', count: Math.floor(m / 12) };
+}
+
+function agoTextRO(p) {
+  if (!p) return '';
+  switch (p.unit) {
+    case 'now':       return 'acum';
+    case 'min':       return `acum ${p.count} min`;
+    case 'hour':      return `acum ${p.count}h`;
+    case 'yesterday': return 'ieri';
+    case 'day':       return `acum ${p.count} zile`;
+    case 'month':     return `acum ${p.count} luni`;
+    case 'year':      return `acum ${p.count} ani`;
+  }
+  return '';
+}
+
+function timeAgo(date) {
+  return agoTextRO(agoParts(date));
 }
 
 const STATUS_LABEL = {
@@ -80,7 +102,15 @@ function lastProjectInfo(projects) {
   const p = projects[0] || null;
   if (!p) return null;
   const name = p.name.length > 32 ? p.name.slice(0, 32) + '…' : p.name;
-  return { name, statusLabel: STATUS_LABEL[p.status] || p.status, statusKey: p.status.replace('_', '-'), timeAgo: timeAgo(p.updatedAt) };
+  const ago  = agoParts(p.updatedAt);
+  return {
+    name,
+    statusLabel: STATUS_LABEL[p.status] || p.status,
+    statusKey:   p.status.replace('_', '-'),
+    timeAgo:     agoTextRO(ago),
+    agoUnit:     ago ? ago.unit  : '',
+    agoCount:    ago ? ago.count : 0,
+  };
 }
 
 function hxRedirect(req, res, url) {
