@@ -470,6 +470,38 @@
     "tool-info-page-name": "Info page", "tool-info-page-desc": "An informational page with sections and a clear call to action.",
     "tool-form-page-name": "Form page", "tool-form-page-desc": "A form with validation and a confirmation message on submit.",
     "tool-slides-name": "Slides", "tool-slides-desc": "A slide deck for presentations and meetings.",
+    // Help page
+    "help-title": "How Libra Maker Works",
+    "help-sub": "Three things to know before starting a project.",
+    "help-can-title": "What you can build",
+    "help-can-1": '<span class="dot"></span><b>Information page</b> — title, text, image and a bullet list. One static page.',
+    "help-can-2": '<span class="dot"></span><b>Collection form</b> — a page with fields to fill in and a confirmation on submit.',
+    "help-limits-title": "WHAT IT CANNOT DO",
+    "help-chip-1": "no internet access",
+    "help-chip-2": "no other systems",
+    "help-chip-3": "no package installs",
+    "help-chip-4": "no self-publishing",
+    "help-bp-title": "No bypass possible",
+    "help-bp-1": '<span class="dot"></span>There is no publish button for business users — the only way out of Libra Maker is a request to Dev.',
+    "help-bp-2": '<span class="dot"></span>There is no &ldquo;advanced&rdquo; mode, terminal or free prompt.',
+    "help-logout": "Sign out",
+    // Delete modal
+    "modal-delete-title": "Delete project?",
+    "modal-delete-pre": "Project",
+    "modal-delete-post": "will be permanently deleted. This action cannot be undone.",
+    "modal-cancel": "Cancel",
+    "modal-confirm": "Yes, delete",
+    // Details page
+    "builder-subtitle": "Libra Maker helps you",
+    "tpl-placeholder": "— Select a template —",
+    "preview-ph-text": "Describe what you want on the left and the page appears here.",
+    // Sidebar restricted
+    "restricted-head": "RESTRICTED MODE",
+    "restricted-text": "Only the 2 approved tools. No access to files, network or other projects.",
+    // Handoff subtitle
+    "handoff-sub-post": "has entered the review queue.",
+    // Home hero lede
+    "hero-lede": "Describe the page in your own words, and we’ll prepare it for the development team.",
     // Result page
     "result-title": "Your page is ready",
     "result-sub": "Take a look. If it looks good, send it to the Dev team.",
@@ -501,15 +533,40 @@
 
   var savedRO = {}, savedROPH = {};
 
+  // Relative time ("acum 3 zile"): the server sends unit + count as data
+  // attributes so it can be worded in either language.
+  function agoTextEN(unit, n) {
+    switch (unit) {
+      case "now":       return "just now";
+      case "min":       return n + " min ago";
+      case "hour":      return n + "h ago";
+      case "yesterday": return "yesterday";
+      case "day":       return n + (n === 1 ? " day ago"   : " days ago");
+      case "month":     return n + (n === 1 ? " month ago" : " months ago");
+      case "year":      return n + (n === 1 ? " year ago"  : " years ago");
+    }
+    return null;
+  }
+
   function applyLang(lang) {
     var en = lang === "en";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-ago-unit]"), function (el) {
+      if (en) {
+        if (!el.hasAttribute("data-ago-ro")) el.setAttribute("data-ago-ro", el.textContent);
+        var t = agoTextEN(el.getAttribute("data-ago-unit"),
+                          parseInt(el.getAttribute("data-ago-count"), 10) || 0);
+        if (t) el.textContent = t;
+      } else if (el.hasAttribute("data-ago-ro")) {
+        el.textContent = el.getAttribute("data-ago-ro");
+      }
+    });
     Array.prototype.forEach.call(document.querySelectorAll("[data-i18n]"), function (el) {
       var key = el.getAttribute("data-i18n");
       if (en) {
-        if (!Object.prototype.hasOwnProperty.call(savedRO, key)) savedRO[key] = el.textContent;
-        if (DICT_EN[key] !== undefined) el.textContent = DICT_EN[key];
+        if (!Object.prototype.hasOwnProperty.call(savedRO, key)) savedRO[key] = el.innerHTML;
+        if (DICT_EN[key] !== undefined) el.innerHTML = DICT_EN[key];
       } else {
-        if (Object.prototype.hasOwnProperty.call(savedRO, key)) el.textContent = savedRO[key];
+        if (Object.prototype.hasOwnProperty.call(savedRO, key)) el.innerHTML = savedRO[key];
       }
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-i18n-ph]"), function (el) {

@@ -1526,10 +1526,13 @@ a{color:var(--link);text-decoration:none}
   padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
 }
 
-/* Rădăcina split-ului ocupă tot spațiul disponibil în content */
+/* Root of the split — fills available space; override chat-split's height:100vh */
 .ab-split-root{
   display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;
   background:var(--bg);
+}
+.app-shell--builder .chat-split{
+  height:auto;
 }
 
 /* Coloana stângă — flex column, overflow hidden; scroll e în .ab-split-scroll */
