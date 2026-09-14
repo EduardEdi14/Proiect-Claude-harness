@@ -98,6 +98,55 @@ function toolByID(id) {
   return TOOLS.find(t => t.id === id) || null;
 }
 
+// ---------- general-purpose templates (discover gallery + builder panel) ----------
+
+const TEMPLATES = [
+  { name: 'Tablou de bord',        skill: 'dashboard',
+    tpl: 'Tablou de bord cu situatia [activitate] din [trimestrul/luna]: total [indicator 1], [indicator 2] si [indicator 3], cu un grafic pe luni si un tabel detaliat pe [sucursale/departamente].' },
+  { name: 'Grafic din date',       skill: 'chart',
+    tpl: 'Grafic cu evolutia [metrica] pe luni in [an]: [luna 1] [valoare], [luna 2] [valoare], [luna 3] [valoare], [luna 4] [valoare], [luna 5] [valoare], [luna 6] [valoare].' },
+  { name: 'Raport',                skill: 'report',
+    tpl: 'Raport pentru [conducere/departament] despre [subiect] din [luna/trimestrul]: [cifra principala] ([comparatie fata de perioada anterioara]), [observatie cheie]. Propun [actiuni recomandate].' },
+  { name: 'Tabel de date',         skill: 'data-table',
+    tpl: 'Tabel cu situatia [activitate] din [perioada]: coloane pentru [camp 1], [camp 2], [camp 3] si [camp 4], cu filtrare, sortare si export CSV.' },
+  { name: 'Pagina de informare',   skill: 'info-page',
+    tpl: 'Pagina de informare despre [subiect]: [introducere scurta], [detalii principale] si [contact sau actiune de urmat].' },
+  { name: 'Formular de colectare', skill: 'form-page',
+    tpl: 'Formular pentru [scop]: campuri pentru [camp 1], [camp 2], [camp 3] si [camp 4]. Confirmare automata dupa trimitere.' },
+  { name: 'Prezentare',            skill: 'slides',
+    tpl: 'Prezentare pentru [comitet/sedinta] despre [subiect]: situatia curenta, [problema/oportunitatea], [propunere cu argumente], [costuri si beneficii] si cerere de aprobare pentru [decizie].' },
+  { name: 'Cerere',                skill: 'form-page',
+    tpl: 'Formular de cerere pentru [tipul de cerere]: campuri pentru [camp 1], [camp 2], motivul cererii si data la care este necesar. Confirmare automata dupa trimitere.' },
+  { name: 'Sondaj',                skill: 'form-page',
+    tpl: 'Sondaj despre [subiect] pentru [audienta]: intrebari despre [tema 1], [tema 2], o nota de satisfactie de la 1 la 5 si camp liber pentru sugestii.' },
+  { name: 'Campanie',              skill: 'info-page',
+    tpl: 'Pagina pentru campania interna [numele campaniei] ([data start]-[data end]): [scopul campaniei], [detalii principale] si contact [persoana responsabila], [departament].' },
+  { name: 'Onboarding',            skill: 'info-page',
+    tpl: 'Pagina de onboarding pentru [rol/departament]: primele [zile/saptamani] in companie, cine raspunde de [domeniu 1] si [domeniu 2], lista de accesuri necesare si calendarul de integrare.' },
+  { name: 'Anunt',                 skill: 'info-page',
+    tpl: 'Anunt intern despre [subiect]: ce se schimba de la [data], [detalii principale], intrebari frecvente si [actiunea necesara din partea angajatului].' },
+  { name: 'Eveniment',             skill: 'info-page',
+    tpl: 'Pagina pentru evenimentul [numele evenimentului] din [data] la [locatie]: programul pe ore, [detalii principale] si contact [persoana responsabila].' },
+  { name: 'Echipa',                skill: 'info-page',
+    tpl: 'Pagina de prezentare a echipei [numele echipei/departamentului]: misiunea echipei, membrii cu rolurile lor, proiectele active si [contact pentru colaborari interne].' },
+  { name: 'FAQ',                   skill: 'info-page',
+    tpl: 'Pagina FAQ despre [subiect]: raspunsuri la [intrebarea 1], [intrebarea 2], [intrebarea 3] si contact pentru intrebari suplimentare la [persoana/email].' },
+  { name: 'Feedback',              skill: 'form-page',
+    tpl: 'Formular de feedback dupa [activitate/training/eveniment]: ce a fost util, ce lipsea, o nota de la 1 la 5 pentru [criteriu] si camp liber pentru sugestii.' },
+  { name: 'Program',               skill: 'info-page',
+    tpl: 'Program pentru [evenimentul/activitatea] din [data] la [locatie]: intervalele orare, [descrierea activitatilor/sesiunilor], [prezentatorii/responsabilii] si informatii de contact.' },
+  { name: 'Beneficii',             skill: 'info-page',
+    tpl: 'Pagina despre beneficiile [tipul de angajat]: [beneficiul 1] - cum se acceseaza, [beneficiul 2] - cum se acceseaza si [beneficiul 3] - cum se acceseaza.' },
+  { name: 'Cursuri',               skill: 'form-page',
+    tpl: 'Formular de inscriere la [cursul/programul de training] din [perioada]: campuri pentru [camp 1], alegerea cursului din lista, nivelul de experienta si [intervalul orar/locatia preferata].' },
+  { name: 'Regulament',            skill: 'info-page',
+    tpl: 'Pagina cu regulamentul [activitatii/concursului/procedurii]: conditiile de participare, [regulile principale], [termene si exceptii] si contact [persoana responsabila].' },
+  { name: 'Recrutare',             skill: 'form-page',
+    tpl: 'Formular de recomandare pentru pozitia de [denumirea pozitiei] din [departament]: campuri pentru numele candidatului, CV sau profil LinkedIn, relatia cu recomandantul si un scurt argument.' },
+  { name: 'Ghid',                  skill: 'info-page',
+    tpl: 'Ghid despre [subiect] pentru [audienta]: [sectiunea 1 - descriere], [sectiunea 2 - descriere], [sectiunea 3 - descriere] si [contact sau resurse suplimentare].' },
+];
+
 // ---------- ajutoare pentru date ----------
 
 const MONTHS_RO = ['ian.','feb.','mar.','apr.','mai','iun.','iul.','aug.','sept.','oct.','nov.','dec.'];
@@ -633,4 +682,4 @@ class Store {
   }
 }
 
-module.exports = { STATUS, TOOLS, toolByID, User, Project, Store, MONTHS_RO };
+module.exports = { STATUS, TOOLS, TEMPLATES, toolByID, User, Project, Store, MONTHS_RO };

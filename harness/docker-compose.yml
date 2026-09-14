@@ -18,14 +18,14 @@ services:
     image: libra-maker-node:latest
     container_name: libra-maker
     ports:
-      - "8080:8080"
+      - "3000:3000"
     # Read .env from the node directory so DATABASE_URL and other secrets
     # do not have to be duplicated here.
     env_file:
       - backend/node/.env
     environment:
       # These override any value from .env, giving explicit defaults.
-      PORT: "8080"
+      PORT: "3000"
       NODE_ENV: "development"
     volumes:
       - ./frontend/templates-njk:/app/frontend/templates-njk:ro

@@ -456,7 +456,9 @@
     "tpl-remote-name": "Remote Work Rules", "tpl-remote-tag": "Guide",
     // Builder (details page)
     "builder-t1": "You’re building", "builder-t2": "your page",
-    "tab-templates": "Templates",
+    "tab-tools": "Tools", "tab-templates": "Templates",
+    "tpl-section-label": "Or start from a predefined template",
+    "tpl-use-btn": "Use this template →",
     "input-ph": "Describe the page you want…",
     "input-hint": "Enter sends · Shift+Enter new line",
     "preview-label": "Preview", "handoff-btn": "Send to Dev team", "back-home": "← Home",
@@ -1054,20 +1056,22 @@
   var busy          = false;
   var typingEl      = null;
 
-  // ── Mesaj de bun-venit ────────────────────────────────────────────────
+  // ── Welcome / resume init ─────────────────────────────────────────────
   function init() {
-    // Dacă e un proiect reluat, intrăm direct în modul split cu pagina salvată
+    // Resumed project: enter split mode directly with the saved page
     if (resume && currentProjId) {
       firstBuild = false;
       var messagesWrap = document.getElementById("cs-messages-wrap");
       var gallery      = document.getElementById("ab-gallery");
       var rightPanel   = document.getElementById("cs-right");
-      if (messagesWrap) messagesWrap.hidden = false;
-      if (gallery)      gallery.hidden      = true;
-      if (rightPanel)   rightPanel.hidden   = false;
+      var tplSectionResume = document.getElementById("tpl-section");
+      if (messagesWrap)     messagesWrap.hidden     = false;
+      if (gallery)          gallery.hidden          = true;
+      if (tplSectionResume) tplSectionResume.hidden = true;
+      if (rightPanel)       rightPanel.hidden       = false;
       container.classList.add("is-split");
       if (actionsEl) actionsEl.hidden = false;
-      // Încărcăm HTML-ul și istoricul conversației în paralel
+      // Load saved page HTML and chat history in parallel
       Promise.all([
         fetch("/proiect/" + currentProjId + "/pagina").then(function(r) { return r.ok ? r.text() : null; }),
         fetch("/proiect/" + currentProjId + "/chat").then(function(r) { return r.ok ? r.json() : []; }),
@@ -1075,18 +1079,18 @@
         var h        = results[0];
         var messages = results[1] || [];
 
-        // Redăm istoricul conversației
+        // Render chat history
         messages.forEach(function(m) {
           if (m.role === "user") addUser(m.text || "");
           else addVera(esc(m.text || ""), m.cost, m.durata);
         });
 
-        // Mesaj dacă nu există istoric salvat
+        // Fallback message if no history saved
         if (!messages.length) {
           addVera("Ai reluat proiectul. Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva.");
         }
 
-        // Afișăm pagina în iframe
+        // Show saved page in iframe
         if (h) {
           currentHtml = h;
           if (placeholder) placeholder.hidden = true;
@@ -1114,7 +1118,7 @@
     input.focus();
   }
 
-  // ── Resize textarea ───────────────────────────────────────────────────
+  // ── Auto-resize textarea ─────────────────────────────────────────────
   function resize() {
     input.style.height = "auto";
     input.style.height = Math.min(input.scrollHeight, 150) + "px";
@@ -1133,7 +1137,7 @@
   });
   sendBtn.addEventListener("click", doSend);
 
-  // Cardurile de sablon pre-completeaza inputul cu promptul de exemplu.
+  // Template cards pre-fill the textarea with the example prompt.
   Array.prototype.forEach.call(document.querySelectorAll(".ab-card"), function (card) {
     card.addEventListener("click", function () {
       var tpl = card.getAttribute("data-tpl");
@@ -1142,6 +1146,8 @@
         c.classList.remove("is-selected");
       });
       card.classList.add("is-selected");
+      skill = card.getAttribute("data-skill") || skill;
+      container.setAttribute("data-skill", skill);
       input.value = tpl;
       resize();
       syncSend();
@@ -1149,11 +1155,76 @@
     });
   });
 
+  // ── Custom template dropdown — opens downward, fills textarea ───────
+  var tplDropBtn  = document.getElementById("tpl-drop-btn");
+  var tplDropList = document.getElementById("tpl-drop-list");
+  var tplDropVal  = document.getElementById("tpl-drop-val");
+
+  function closeTplDrop() {
+    if (!tplDropList) return;
+    tplDropList.hidden = true;
+    if (tplDropBtn) tplDropBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function applyTplItem(item) {
+    var tplSkill = item.getAttribute("data-skill") || "";
+    var tplText  = item.getAttribute("data-tpl")   || "";
+    var tplName  = item.getAttribute("data-value") || "";
+    if (tplDropVal) tplDropVal.textContent = tplName;
+    if (tplSkill) {
+      skill = tplSkill;
+      container.setAttribute("data-skill", tplSkill);
+    }
+    if (tplText) {
+      input.value = tplText;
+      resize();
+      syncSend();
+      input.focus();
+      var start = tplText.indexOf("[");
+      var end   = tplText.indexOf("]", start);
+      if (start >= 0 && end >= 0) input.setSelectionRange(start, end + 1);
+    }
+    closeTplDrop();
+  }
+
+  if (tplDropBtn && tplDropList) {
+    function openTplDrop() {
+      var btnRect  = tplDropBtn.getBoundingClientRect();
+      var dock     = document.querySelector(".ab-input-dock");
+      var dockTop  = dock ? dock.getBoundingClientRect().top : window.innerHeight;
+      var maxH     = Math.max(80, dockTop - btnRect.bottom - 10);
+      tplDropList.style.top       = (btnRect.bottom + 4) + "px";
+      tplDropList.style.left      = btnRect.left + "px";
+      tplDropList.style.width     = btnRect.width + "px";
+      tplDropList.style.maxHeight = maxH + "px";
+      tplDropList.hidden = false;
+      tplDropBtn.setAttribute("aria-expanded", "true");
+    }
+
+    tplDropBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (!tplDropList.hidden) { closeTplDrop(); } else { openTplDrop(); }
+    });
+
+    tplDropList.addEventListener("click", function (e) {
+      var item = e.target.closest(".tpl-drop-item");
+      if (item) applyTplItem(item);
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!tplDropList.hidden && !e.target.closest("#tpl-drop")) closeTplDrop();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeTplDrop();
+    });
+  }
+
   // ── Handoff ───────────────────────────────────────────────────────────
   if (handoffBtn) {
     handoffBtn.addEventListener("click", function () {
       if (!currentProjId) return;
-      // Submit ca form simplu — serverul face redirect la pagina de confirmare.
+      // Simple form submit — server redirects to confirmation page.
       var form = document.createElement("form");
       form.method = "POST";
       form.action = "/proiect/" + currentProjId + "/handoff";
@@ -1162,20 +1233,22 @@
     });
   }
 
-  // ── Trimitere mesaj ───────────────────────────────────────────────────
+  // ── Send message ──────────────────────────────────────────────────────
   function doSend() {
     var userText = input.value.trim();
     if ((!userText && attachedFiles.length === 0) || busy) return;
 
-    // Construim mesajul complet: fișiere + textul utilizatorului
+    // Build full message: attached files + user text
     var fullText = buildMessage(userText);
 
-    // La primul mesaj: afișăm zona de chat și ascundem galeria
+    // On first send: show chat area, hide gallery and template dropdown
     if (firstBuild) {
       var messagesWrap = document.getElementById("cs-messages-wrap");
       var gallery      = document.getElementById("ab-gallery");
+      var tplSection   = document.getElementById("tpl-section");
       if (messagesWrap) messagesWrap.hidden = false;
       if (gallery)      gallery.hidden      = true;
+      if (tplSection)   tplSection.hidden   = true;
     }
 
     // Imaginile merg separat la API; fișierele text merg în prompt

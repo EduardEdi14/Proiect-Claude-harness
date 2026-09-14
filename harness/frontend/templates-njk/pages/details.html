@@ -14,64 +14,65 @@
              {% if projectID %}data-project-id="{{ projectID }}"{% endif %}
              {% if initialHtml %}data-resume="1"{% endif %}>
 
-          {# ── Stânga: scroll sus + input fix jos ── #}
+          {# ── Left panel: scrollable area + fixed input dock ── #}
           <div class="ab-split-left">
 
-            {# Zona scrollabilă: header + mesaje + galerie #}
+            {# Scrollable area: header + messages + gallery #}
             <div class="ab-split-scroll">
               <div class="ab-split-inner">
 
-                {# Header Vera #}
+                {# Agent header #}
                 <div class="ab-header">
                   <div class="ab-brand">
-                    <div class="lm-mark" aria-hidden="true">
+                    <div class="lm-mark lm-mark--xl" aria-hidden="true">
                       <div class="lm-a1"></div>
                       <div class="lm-row"><div class="lm-a2"></div><div class="lm-a3"></div></div>
                     </div>
                     <div>
                       <h1 class="ab-title"><span data-i18n="builder-t1">Construiești</span> <span class="ab-title-dim" data-i18n="builder-t2">pagina ta</span></h1>
                       {% if configurat %}
-                      <p class="ab-subtitle">{{ agentNume }} te ajută &middot; {{ model }}</p>
+                      <p class="ab-subtitle">Libra Maker te ajută</p>
                       {% endif %}
                     </div>
                   </div>
                 </div>
 
-                {# Zona de mesaje (apare după primul send) #}
+                {# Template dropdown — below header, opens downward #}
+                <div id="tpl-section" class="tpl-section-wrap">
+                  <div class="tpl-drop" id="tpl-drop">
+                    <button type="button" class="tpl-drop-btn" id="tpl-drop-btn"
+                            aria-haspopup="listbox" aria-expanded="false">
+                      <span class="tpl-drop-val" id="tpl-drop-val">— Selectează un șablon —</span>
+                      <svg class="tpl-drop-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <ul class="tpl-drop-list" id="tpl-drop-list" role="listbox" hidden>
+                      {% for t in templates %}
+                      <li class="tpl-drop-item" role="option"
+                          data-value="{{ t.name }}"
+                          data-skill="{{ t.skill }}"
+                          data-tpl="{{ t.tpl }}">{{ t.name }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+
+                {# Chat messages area (shown after first send) #}
                 <div id="cs-messages-wrap" hidden>
                   <div class="ab-messages" id="cs-messages" role="log" aria-live="polite"></div>
                 </div>
 
-                {# Galerie șabloane (dispare după prima generare) #}
-                <div id="ab-gallery">
-                  <div class="ab-tabs">
-                    <button class="ab-tab is-active" type="button" data-i18n="tab-templates">Șabloane</button>
-                  </div>
-                  <div class="ab-panel ab-panel--gallery" id="ab-tab-sabloane">
-                    <div class="ab-grid">
-                      {% for t in tools %}
-                      <button class="ab-card{% if tool and tool.id == t.id %} is-selected{% endif %}"
-                              type="button"
-                              data-skill="{{ t.id }}"
-                              data-tpl="{{ t.examplePrompt }}">
-                        <span class="ab-card-icon">{{ t.icon }}</span>
-                        <span class="ab-card-body">
-                          <span class="ab-card-name" data-i18n="tool-{{ t.id }}-name">{{ t.name }}</span>
-                          <span class="ab-card-desc" data-i18n="tool-{{ t.id }}-desc">{{ t.desc }}</span>
-                        </span>
-                      </button>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
+                {# Empty placeholder kept for JS compatibility #}
+                <div id="ab-gallery" hidden></div>
 
               </div>
             </div>
 
-            {# Bara de input — fixată jos, nu se mișcă la scroll #}
+            {# Input dock — fixed at bottom, does not scroll #}
             <div class="ab-input-dock">
               <div class="ab-input-wrap">
-                {# Fișiere atașate #}
+                {# Attached files list #}
                 <div id="cs-attach-list" class="ab-attach-list" hidden></div>
 
                 <div class="ab-bar">
@@ -101,7 +102,7 @@
 
           </div>
 
-          {# ── Dreapta: previzualizare (hidden inițial) ── #}
+          {# ── Right panel: preview (hidden initially) ── #}
           <div class="ab-split-right" id="cs-right" hidden>
             <div class="ab-pv-head">
               <span class="ab-pv-label" data-i18n="preview-label">Previzualizare</span>
