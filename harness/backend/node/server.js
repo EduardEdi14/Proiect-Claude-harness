@@ -136,6 +136,10 @@ function auth(handler) {
         return res.redirect('/login');
       }
       req.user = user;
+      // Paginile autentificate depind de date care se schimba (liste, stari), deci
+      // nu trebuie luate din cache la navigarea inapoi. Tot no-store face ca o
+      // pagina cu date proprii sa nu mai poata fi citita din cache dupa delogare.
+      res.set('Cache-Control', 'no-store');
       return handler(req, res, next);
     } catch (err) {
       next(err);

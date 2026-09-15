@@ -7,7 +7,10 @@
     </div>
     <div class="row-body">
       <div class="row-title">{{ p.name }}</div>
-      <div class="row-meta">{{ p.skillName() }} · {{ p.meta() }}</div>
+      {# Numele proiectului e text scris de om, deci ramane cum a fost scris.
+         Instrumentul si data sunt etichete, deci se traduc: instrumentul prin
+         cheia lui din dictionar, data din status + marca de timp. #}
+      <div class="row-meta"><span data-i18n="tool-{{ p.skillID }}-name">{{ p.skillName() }}</span> · <span data-meta-status="{{ p.status }}" data-meta-iso="{{ p.updatedAt.toISOString() }}">{{ p.meta() }}</span></div>
     </div>
     {% if p.status == 'handed_off' %}
       <span class="badge badge--dev" data-i18n="badge-dev">Predat la Dev</span>
