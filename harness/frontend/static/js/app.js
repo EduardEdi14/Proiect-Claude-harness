@@ -404,8 +404,13 @@
   Array.prototype.forEach.call(cards, function (card) {
     card.addEventListener("click", function () {
       var skill = card.getAttribute("data-skill") || "";
-      // data-tpl-en e pus de comutatorul de limbă; fără el rămâne textul românesc.
-      var tpl   = card.getAttribute("data-tpl-en") || card.getAttribute("data-tpl") || "";
+      // Trimitem numele șablonului, nu textul: ecranul de construire are deja
+      // lista, deci îl regăsește după nume și îl alege ca la un click în meniu —
+      // inclusiv în limba curentă. Cardurile fără data-value (galeria veche)
+      // trimit textul, ca înainte.
+      var tpl = card.getAttribute("data-value") ||
+                card.getAttribute("data-tpl-en") ||
+                card.getAttribute("data-tpl") || "";
       window.location.href = "/proiect-nou/detalii?skill=" +
         encodeURIComponent(skill) + "&tpl=" + encodeURIComponent(tpl);
     });
@@ -492,6 +497,22 @@
     "tool-info-page-name": "Info page", "tool-info-page-desc": "An informational page with sections and a clear call to action.",
     "tool-form-page-name": "Form page", "tool-form-page-desc": "A form with validation and a confirmation message on submit.",
     "tool-slides-name": "Slides", "tool-slides-desc": "A slide deck for presentations and meetings.",
+    // Specialised tools — one per template, each with its own SKILL.md.
+    "tool-campaign-name": "Internal campaign",
+    "tool-onboarding-name": "Onboarding page",
+    "tool-announcement-name": "Internal announcement",
+    "tool-event-name": "Event page",
+    "tool-team-name": "Team presentation",
+    "tool-faq-name": "FAQ",
+    "tool-schedule-name": "Schedule",
+    "tool-benefits-name": "Benefits guide",
+    "tool-regulations-name": "Regulations",
+    "tool-guide-name": "Step-by-step guide",
+    "tool-request-name": "Request form",
+    "tool-survey-name": "Internal survey",
+    "tool-feedback-name": "Feedback form",
+    "tool-course-signup-name": "Course registration",
+    "tool-referral-name": "Refer a candidate",
     // Help page
     "help-title": "How Libra Maker Works",
     "help-sub": "Three things to know before starting a project.",
@@ -1449,6 +1470,29 @@
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") closeTplDrop();
     });
+
+    // Venit dintr-un card din galeria de pe Acasă: șablonul e deja ales, deci
+    // îl aplicăm exact ca la un click în meniu — același skill, același text în
+    // limba curentă, primul [substituit] selectat, gata de scris peste el.
+    // Rulează după comutatorul de limbă, deci data-tpl-en e deja pus.
+    var preselect = (container.getAttribute("data-preselect") || "").trim();
+    if (preselect) {
+      var items = tplDropList.querySelectorAll(".tpl-drop-item");
+      var found = null;
+      for (var i = 0; i < items.length && !found; i++) {
+        if (items[i].getAttribute("data-value") === preselect) found = items[i];
+      }
+      if (found) {
+        applyTplItem(found);
+      } else {
+        // Nu e un nume din listă (link mai vechi, care purta textul întreg).
+        // Îl punem în casetă ca să nu se piardă.
+        input.value = preselect;
+        resize();
+        syncSend();
+        input.focus();
+      }
+    }
   }
 
   // ── Handoff ───────────────────────────────────────────────────────────

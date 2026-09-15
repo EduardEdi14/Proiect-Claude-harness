@@ -5,6 +5,11 @@
   <main class="focus-main">
     <div class="focus-inner">
 
+      {# Ecranul nu are bara de sus, deci comutatoarele stau aici. Fara ele,
+         scripturile de limba si tema nu au pe ce sa se lege si pagina ramane
+         in romana chiar cand restul aplicatiei e pe engleza. #}
+      <div class="focus-tools">{% include "partials/view-toggles.html" %}</div>
+
       <div class="result-head">
         <div class="check-badge">✓</div>
         <div>
