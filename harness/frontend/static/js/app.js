@@ -383,7 +383,8 @@
   Array.prototype.forEach.call(cards, function (card) {
     card.addEventListener("click", function () {
       var skill = card.getAttribute("data-skill") || "";
-      var tpl   = card.getAttribute("data-tpl") || "";
+      // data-tpl-en e pus de comutatorul de limbă; fără el rămâne textul românesc.
+      var tpl   = card.getAttribute("data-tpl-en") || card.getAttribute("data-tpl") || "";
       window.location.href = "/proiect-nou/detalii?skill=" +
         encodeURIComponent(skill) + "&tpl=" + encodeURIComponent(tpl);
     });
@@ -639,6 +640,19 @@
         el.setAttribute("data-tpl-en", t.tpl);
       } else {
         el.textContent = el.getAttribute("data-value");
+        el.removeAttribute("data-tpl-en");
+      }
+    });
+    // Aceleași șabloane, ca galerie pe pagina Acasă.
+    Array.prototype.forEach.call(document.querySelectorAll(".tpl-card"), function (el) {
+      var t = TPL_EN[el.getAttribute("data-value")];
+      if (!t) return;
+      var nameEl = el.querySelector(".tpl-name");
+      if (en) {
+        if (nameEl) nameEl.textContent = t.name;
+        el.setAttribute("data-tpl-en", t.tpl);
+      } else {
+        if (nameEl) nameEl.textContent = el.getAttribute("data-value");
         el.removeAttribute("data-tpl-en");
       }
     });
