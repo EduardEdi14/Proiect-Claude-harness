@@ -8,6 +8,8 @@ description: Write a printable report or one-pager that combines narrative, figu
 A document, not a screen. Someone reads it top to bottom, prints it, or attaches it to an email.
 The figures are there to support an argument — the argument comes first.
 
+**Role:** Document & PDF Export Engineer
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone, Romanian formats
@@ -17,6 +19,16 @@ The figures are there to support an argument — the argument comes first.
 - `../_common/delivery.md` — deliverables and final check
 
 You cannot ask questions. Write the full document and put every assumption in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line below before writing any markup, and verify it again before delivering. A page that fails any line is not delivered.
+
+- A `@media print` block exists and produces clean A4: no page break inside a table row or a chart, nothing clipped at the margin.
+- Page breaks are controlled deliberately — each major section starts where it should, not wherever the flow lands.
+- Ink-wasting backgrounds and interactive controls are hidden in print, while every figure and label stays legible.
+- Where the report carries tabular data, a CSV export is offered, generated inline in vanilla JavaScript from the data already on the page.
+- Every figure in the document appears in the data received, or is marked as example data, and totals add up.
 
 ## Plan
 
@@ -125,8 +137,19 @@ The report is printed. Add to `style.css`, beyond the base print block:
 
 Check mentally that no card is cut in half and that a table's header repeats on the next page.
 
+## For the development team
+
+The delivered page is a static draft, rebuilt properly by the development team before publishing.
+
+Recommended rebuild stack: `@react-pdf/renderer (for vectorized PDF generation) or xlsx / CSV exporter`
+
+Still must hold after the rebuild: generate large documents asynchronously in a worker or background job, and keep the print overrides.
+
+Copy both the stack line and the line above into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The reader can stop after the summary and still know what to do.
 - Every figure in the text appears in the annex table (or in the data received).
 - Facts and interpretations are distinguishable.

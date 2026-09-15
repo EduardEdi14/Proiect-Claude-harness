@@ -11,6 +11,8 @@ here: the page has no server, it sends nothing anywhere, submission is intercept
 `preventDefault()` and replaced by a confirmation, and `NOTE.md` tells the development team where
 the referrals must actually go.
 
+**Role:** Viral Mechanics & Referral Engine
+
 This is the one template in the family that collects **another person's** personal data. The rules
 below are not advice; they decide what the form may contain.
 
@@ -25,6 +27,20 @@ below are not advice; they decide what the form may contain.
 
 You cannot ask questions. Decide the field set yourself, and write every decision — especially
 every field you left out — into `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Checked before a single line of markup is written, and verified again before delivery. A page that
+fails any line below is not delivered.
+
+- The referrer identifies themselves, so every referral is attributable to a person.
+- The candidate's consent to being put forward is confirmed by an explicit, unchecked checkbox.
+- The confirmation shows a reference the referrer can quote when following up, with a vanilla
+  copy-to-clipboard button.
+- No tracking of any kind: no pixel, no analytics call, no click or conversion counter. The subject
+  of the data is a candidate who never visited this page.
+- No QR code, and no third-party share integration — both need code or services this page cannot
+  reach.
 
 ## Plan
 
@@ -203,8 +219,23 @@ A static page cannot accept an upload — there is no server to receive it, and 
 - It does not verify the candidate's consent, identity or anything the referrer writes about them.
 - It does not enter the candidate into a recruitment system, track the referral's status, or compute a referral bonus.
 
+## For the development team
+
+The delivered page is a static draft: three files, no build step, no dependencies, nothing sent
+anywhere.
+
+Recommended rebuild stack: **nanoid (for short collision-resistant hashes), Web Share API**.
+
+In the real build, referral references are short collision-resistant ids; and if referral analytics
+are ever added, the candidate's data must stay out of them. Growth tracking here is not merely
+unavailable, it is inappropriate: the data subject is a third party who never visited the page. The
+consent checkbox stays explicit and unchecked.
+
+Copy the stack and these constraints into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Only name, one contact channel and one CV reference are collected about the candidate.
 - No CNP, date of birth, salary field, photograph or protected characteristic anywhere in the page.
 - The consent confirmation is present, required and unchecked, with its own error message.

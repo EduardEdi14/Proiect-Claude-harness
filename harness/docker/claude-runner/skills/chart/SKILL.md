@@ -8,6 +8,8 @@ description: Turn a set of figures into one well-made chart (or a small set) on 
 One chart, made properly, with the sentence that explains it. This is the template for "I have
 these numbers, show them to me" — not a dashboard, not a report: the figures and their reading.
 
+**Role:** Data Visualization Engineer
+
 ## Read first
 
 - `../_common/charts-svg.md` — the whole craft: forms, coordinates, formulas, accessibility
@@ -17,6 +19,20 @@ these numbers, show them to me" — not a dashboard, not a report: the figures a
 - `../_common/delivery.md` — deliverables and final check
 
 You cannot ask questions. Choose, build, and record every choice in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check these before you write any markup and again before you deliver; a page that fails one line
+is not delivered.
+
+- A series with no data renders an explicit empty state with a sentence explaining why it is empty
+  — never a blank frame or an axis with no marks.
+- Every axis label, value label and total carries its unit: `RON`, `%`, or a date, formatted to
+  Romanian conventions.
+- Percentages that are meant to total 100 do total 100, and the page says what the base is.
+- Every figure drawn appears in the data received, or is marked as example data.
+- The chart is accompanied by the same data as a table, so it is readable without interpreting the
+  drawing.
 
 ## Plan
 
@@ -96,8 +112,21 @@ the page reads top to bottom as an argument — not as a wall of charts.
 - A title that names the category ("Grafic vânzări") instead of the finding.
 - Precision no one needs: `1.284,3921 lei` on an axis.
 
+## For the development team
+
+The delivered page is a static draft: the figures are hand-drawn, with no data connection.
+
+Recommended rebuild stack: `Recharts or Tremor (built on responsive layouts)`.
+
+What must still hold after the rebuild: loading skeletons while the data resolves; empty states for
+null or empty datasets; and axis and tooltip formatters for currency, percentage and timestamp.
+
+Copy both the stack and these constraints into `NOTE.md`, under its "For the development team"
+heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The `<h1>` states the finding, the caption explains the exception.
 - The axis maximum is round; the grid has 4-5 lines; the labels do not overlap.
 - All the data is also present as a table.

@@ -9,6 +9,8 @@ A page where colleagues fill something in: a sign-up, a short survey, an interna
 comes out of this template is the finished front end, plus a precise note about where the answers
 have to be stored.
 
+**Role:** Form Architecture & Zod Validator
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -18,6 +20,22 @@ have to be stored.
 
 You cannot ask questions. Choose the fields, build the whole form, and write your choices into
 `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line before you write any markup, and verify it again before delivering. A page that
+fails one of these lines is not delivered.
+
+- All validation is driven by a single declarative schema object defined once in the inline script —
+  field name, type, required flag and message — with no ad-hoc per-field checks scattered through
+  the code.
+- Every error message shown to the colleague comes from that schema, so the page and the schema can
+  never disagree.
+- `NOTE.md` contains the equivalent Zod schema for that exact field set, ready for the rebuild.
+- The existing validation timing is respected: validate on submit, and re-validate on `blur` only
+  after a field has already failed.
+- The form declares no `action` and no `method`, and nothing on the page implies the answers were
+  stored.
 
 ## The hard limit: where do the answers go?
 
@@ -32,6 +50,11 @@ and no place to store answers. So:
 
 Never simulate storage (no `localStorage` pretending to be a database, no `mailto:` submit).
 A form that seems to work but throws answers away is worse than an honest preview.
+
+The line to hold is what the colleague is told, not which browser API you touched. Keeping an
+unsent draft in `localStorage` so a half-filled form survives a refresh is honest and useful —
+provided a visible line says it stays in this browser and has not been submitted. Presenting that
+same draft as a saved or received answer is the thing that is forbidden.
 
 ## Plan
 
@@ -139,8 +162,20 @@ Never block on a field the description did not ask for, and never invent format 
 - A visible line stating what the data is used for and for how long it is kept.
 - No pre-checked consent checkbox.
 
+## For the development team
+
+What you deliver is a static draft; the real form is rebuilt by the development team.
+Recommended stack: **React Hook Form + Zod, Conform**.
+
+What must still hold after the rebuild: infer the TypeScript types from the Zod schema rather than
+redeclaring them, and map backend validation errors back onto the individual fields.
+
+Copy both the recommended stack and those requirements into `NOTE.md`, under its
+"For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - 8 fields at most, each one justified.
 - Every field has a real `<label>` (grouped fields use `<fieldset>` + `<legend>`).
 - Validation is understandable, in Romanian, next to the field, keyboard accessible.

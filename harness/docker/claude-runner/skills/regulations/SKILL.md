@@ -11,6 +11,8 @@ the page is **read adversarially** — by someone looking for the loophole, the 
 case the rules forgot. Citable numbered clauses, exact dates and named exceptions outrank friendly
 prose.
 
+**Role:** Compliance & Legal Terms Parser
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone, Romanian date format
@@ -20,6 +22,20 @@ prose.
 
 You cannot ask questions. Every rule the description leaves open becomes a clearly marked example
 clause, listed in `NOTE.md` as something the owner must confirm before publishing.
+
+## Acceptance test (blocking)
+
+Checked before a single line of markup is written, and verified again before delivery. A page that
+fails any line below is not delivered.
+
+- A version number and a "last updated" date appear at the top of the rules.
+- A changelog section lists what changed, in which version, on what date — most recent first.
+- Clauses are numbered so they can be cited in writing ("punctul 3.2").
+- No "I accept" control that records nothing. If the description asks for one, leave it out and
+  record the requirement in `NOTE.md` instead — in a bank, an acceptance that logs nowhere is worse
+  than none, because it looks as if consent was captured when it was not.
+- Dates are complete, including the closing hour where a deadline exists — never "până vineri" on
+  its own.
 
 ## Plan
 
@@ -161,8 +177,23 @@ clause, listed in `NOTE.md` as something the owner must confirm before publishin
 - It does not give legal validation: the text is a draft of an internal regulation, and Legal and Compliance must review it before publishing.
 - It does not compute, rank or publish results; there is no data connection, so any score, quota or prize value on the page is the one written in the description.
 
+## For the development team
+
+The delivered page is a static draft: three files, no build step, no dependencies, nothing stored
+and nothing logged.
+
+Recommended rebuild stack: **Versioned document store, Date-fns (last updated timestamps)**.
+
+The rebuild needs a versioned document store and a real acceptance log capturing who accepted which
+version and when — that log is the precondition for any "Accept Terms" control existing at all. The
+version, the "last updated" date, the changelog and the citable clause numbers must all survive, as
+must complete dates with closing hours.
+
+Copy the stack and these constraints into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Eligibility, deadline and decision mechanism are readable without scrolling twice.
 - Every rule is a numbered clause that can be cited as "punctul N".
 - Every date has day, month, year, and an hour where something closes.

@@ -10,6 +10,8 @@ run through a process. A specialisation of `info-page` where the spine of the pa
 **sequence of steps**, and each step tells the reader both what to do and what they should see
 afterwards, so they know it worked before moving on.
 
+**Role:** MDX & Documentation Architect
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -19,6 +21,21 @@ afterwards, so they know it worked before moving on.
 
 You cannot ask questions. Where the description skips a step, a screen name or a menu label, write
 the step with clearly marked example text (`[de confirmat]`) and list it in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Checked before a single line of markup is written, and verified again before delivery. A page that
+fails any line below is not delivered.
+
+- Every `h2` and `h3` carries a stable `id` and a visible anchor link, so any step can be linked to
+  directly.
+- A table of contents built from those exact ids sits after the introduction, and every entry
+  actually resolves.
+- Code or command blocks use `<pre><code>` and carry a copy-to-clipboard button written in vanilla
+  JavaScript; with JavaScript disabled the text is still selectable.
+- No syntax highlighting is invented by hand-colouring tokens — an unhighlighted, correctly
+  formatted block is the honest result.
+- Every step states what the reader should see after doing it, so they can tell it worked.
 
 ## Plan
 
@@ -161,8 +178,23 @@ the step with clearly marked example text (`[de confirmat]`) and list it in `NOT
 - It does not include real screenshots — every image is a grey placeholder box the development team replaces before publishing.
 - It does not verify that the procedure is current; the process owner must confirm screen names, approvers and timings, which the guide marks as `[de confirmat]` where the description was silent.
 
+## For the development team
+
+The delivered page is a static draft: three files, no build step, no dependencies, nothing stored.
+
+Recommended rebuild stack: **Nextra, Contentlayer, or MDX Remote; Table of Contents (TOC)
+generator**.
+
+In the real build, generate the heading ids and the table of contents automatically rather than by
+hand, and add real syntax highlighting. Everything in the acceptance test must still hold: stable
+deep-linkable headings, a ToC whose every entry resolves, code blocks that stay selectable with
+JavaScript disabled, and a stated result after every step.
+
+Copy the stack and these constraints into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The reader knows, from the header alone, what they will have achieved and how long it takes.
 - Every prerequisite sits before step 1.
 - Every step is one action and says what the reader should see afterwards.

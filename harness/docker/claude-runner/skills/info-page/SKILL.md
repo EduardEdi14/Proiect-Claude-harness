@@ -8,6 +8,8 @@ description: Build a single informational page — an internal announcement, a g
 One page that tells colleagues something: a campaign starts, a procedure changed, this is how you
 ask for access. No data, no forms — text organized so it can be read in a hurry.
 
+**Role:** Static Content & Accessibility Auditor
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -17,6 +19,21 @@ ask for access. No data, no forms — text organized so it can be read in a hurr
 
 You cannot ask questions. Fill in what is missing with clearly marked example text and record it
 in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Checked before a single line of markup is written, and verified again before delivery. A page that
+fails any line below is not delivered.
+
+- The page uses real landmarks: a single `<main>`, a `<header>`, and `<section>` or `<article>` for
+  each part of the content.
+- Exactly one `<h1>`, and heading levels descend without skipping — no `<h3>` directly under an
+  `<h1>`.
+- Body text meets WCAG AA contrast against its background: at least 4.5:1, or 3:1 for large text.
+  State the pair you relied on in `NOTE.md`.
+- A dark-mode palette is defined under `prefers-color-scheme: dark`, with every colour given a value
+  in both modes so nothing inherits a light-only colour.
+- No information is carried by colour alone; anything colour-coded also has a label, icon or shape.
 
 ## Plan
 
@@ -98,8 +115,21 @@ in `NOTE.md`.
 - **No decorative filler text.** If the description is thin, write the minimum honest version and
   list in `NOTE.md` what the colleague still has to fill in.
 
+## For the development team
+
+The delivered page is a static draft: three files, no build step, no dependencies, nothing stored.
+
+Recommended rebuild stack: **@tailwindcss/typography (prose), Lighthouse a11y standards**.
+
+The same semantic structure and AA contrast must survive the rebuild, verified with an accessibility
+audit rather than by eye: one `<main>` and one `<h1>`, heading levels that never skip, a dark mode
+in which every colour has a value, and no meaning carried by colour alone.
+
+Copy the stack and these constraints into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - A colleague in a hurry gets the point from title + callout alone.
 - Every section has a heading that says what is inside.
 - There is exactly one action and it is impossible to miss.

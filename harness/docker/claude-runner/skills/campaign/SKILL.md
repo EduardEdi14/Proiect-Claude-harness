@@ -9,6 +9,8 @@ One page for a campaign that starts and ends: what we are doing, between which d
 colleague does to take part, where, and who answers questions. A specialisation of `info-page`
 where **time is the spine of the page** — the period and the deadline to join outrank everything.
 
+**Role:** Campaign & Attribution Handler
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone, Romanian date format
@@ -18,6 +20,19 @@ where **time is the spine of the page** — the period and the deadline to join 
 
 You cannot ask questions. Missing dates, locations or owners become clearly marked example text,
 listed in `NOTE.md` as things the colleague must confirm.
+
+## Acceptance test (blocking)
+
+Check these before you write any markup and again before you deliver; a page that fails one line
+is not delivered.
+
+- The campaign name and its exact start and end dates appear in the header.
+- The deadline to join is stated in full and repeated in the callout.
+- Any sign-up or "find out more" link carries a campaign identifier in its query string, so the
+  destination knows which campaign sent the colleague.
+- `NOTE.md` names that parameter and its value.
+- The page sends nothing and promises no e-mail: no form, and no mail client link presented as a
+  submission.
 
 ## Plan
 
@@ -125,8 +140,22 @@ listed in `NOTE.md` as things the colleague must confirm.
 - It does not track live progress towards the target: there is no data connection, so any figure on the page is the one written in the description.
 - It does not send reminders, invitations or calendar entries; it is a static page the development team publishes.
 
+## For the development team
+
+The delivered page is a static draft: it collects nothing, sends nothing and tracks nothing.
+
+Recommended rebuild stack: `React Hook Form, UTM parser utilities, Resend / React-Email`.
+
+What must still hold after the rebuild: the campaign parameter must be captured from the URL and
+persisted on submission, so attribution is not lost; and campaign e-mail belongs to the real
+backend, never to the page.
+
+Copy both the stack and these constraints into `NOTE.md`, under its "For the development team"
+heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The period and the sign-up deadline are readable from the header alone.
 - "Cum participi" is a numbered list a colleague can follow without asking anything.
 - Every location has floor, days and hours.

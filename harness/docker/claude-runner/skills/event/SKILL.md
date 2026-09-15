@@ -9,6 +9,8 @@ One page for one event. A specialisation of `info-page` whose spine is **the pro
 when / where sits above everything, then the hour-by-hour agenda, then the practical details
 someone needs the evening before.
 
+**Role:** Event Scheduler & Calendar Sync Specialist
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone, Romanian date and hour format
@@ -17,6 +19,19 @@ someone needs the evening before.
 
 You cannot ask questions. Missing hours, speakers or addresses become clearly marked example text,
 listed in `NOTE.md` for the colleague to confirm.
+
+## Acceptance test (blocking)
+
+Check every line before you write any markup, and verify it again before delivering. A page that
+fails one of these lines is not delivered.
+
+- Every time is written in full: date, weekday, start and end time, and the timezone named
+  explicitly.
+- No relative dates anywhere — never "mâine" or "săptămâna viitoare", always the calendar date.
+- The venue is precise enough to walk to: building, floor, room.
+- The page offers no calendar download and no external calendar link, because it can reach nothing
+  outside the intranet.
+- Nothing on the page implies attendance was registered or confirmed.
 
 ## Plan
 
@@ -134,8 +149,20 @@ listed in `NOTE.md` for the colleague to confirm.
 - It does not create calendar invitations, reminders or attendee lists; it is a static page the development team publishes.
 - It does not cover a recurring series or a multi-event programme — one page is one event; a recurring programme goes on separate pages.
 
+## For the development team
+
+What you deliver is a static draft; the real event page is rebuilt by the development team.
+Recommended stack: **FullCalendar or Day.js, iCal file generator (ics)**.
+
+What must still hold after the rebuild: timestamps stored in UTC and rendered in the viewer's local
+timezone; a generated `.ics` plus Google and Outlook actions.
+
+Copy both the recommended stack and those requirements into `NOTE.md`, under its
+"For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Name, date, hour range and meeting point are readable from the header alone.
 - The programme table is continuous, in order, and includes breaks, meals and travel.
 - Practical details answer transport, dress code and meals, each in its own card.

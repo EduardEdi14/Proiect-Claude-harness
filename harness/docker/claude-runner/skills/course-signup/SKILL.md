@@ -11,6 +11,8 @@ it holds here: the page has no server, it sends nothing anywhere, submission is 
 `preventDefault()` and replaced by a confirmation, and `NOTE.md` tells the development team where
 the registrations must actually go.
 
+**Role:** Checkout & Enrollment Funnel Architect
+
 ## Read first
 
 - `../form-page/SKILL.md` — the parent skill: the hard limit on where answers go, the control
@@ -23,6 +25,21 @@ the registrations must actually go.
 You cannot ask questions. If the description gives no durations, levels or slot times, invent
 plausible placeholders, mark them as examples in the page, and list them in `NOTE.md` for the
 organiser to replace.
+
+## Acceptance test (blocking)
+
+Check these before you write any markup and again before you deliver; a page that fails one line
+is not delivered.
+
+- No seat counter, no "places left", no "last places" claim anywhere — capacity cannot be checked
+  from this page.
+- The confirmation says the place is not final until the organiser confirms it against real
+  capacity.
+- The submit button is disabled immediately after a valid submit, so one click cannot produce two
+  registrations.
+- No payment field of any kind: no card number, no IBAN, no amount. Internal training is not paid
+  by the employee.
+- A second-choice slot is offered, because first choices collide.
 
 ## Plan
 
@@ -183,8 +200,23 @@ A bare list of course names forces a guess. Every option carries three things in
 - It does not reserve a place, send a calendar invitation or a confirmation e-mail.
 - It does not check eligibility, prerequisites or manager approval for the course.
 
+## For the development team
+
+The delivered page is a static draft: it stores no registration and can verify no capacity.
+
+Recommended rebuild stack: `Stripe Elements / Stripe SDK, Zod, secure Server Actions / API
+Handlers`.
+
+What must still hold after the rebuild: server-side capacity validation before any confirmation is
+shown; and idempotent processing, so a retried confirmation cannot enrol the same colleague twice.
+Internal training stays unpaid — the payment parts of that stack are not used here.
+
+Copy both the stack and these constraints into `NOTE.md`, under its "For the development team"
+heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Every course option shows name, duration and level in its own label; experience is behavioural.
 - First and second slot choices are both required, and validation rejects picking the same one.
 - No seat counter, no "full" slot, no wording implying a reserved place.
