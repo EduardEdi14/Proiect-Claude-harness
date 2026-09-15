@@ -45,20 +45,6 @@
       </span>
     </div>
 
-    <div class="stat stat--4">
-      <span class="stat-chip" aria-hidden="true">
-        <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10.5" r="6.8" stroke="currentColor" stroke-width="1.6"/>
-          <path d="M10 6.8v3.9l2.6 1.6M7.6 2.6h4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <span class="stat-body">
-        {# Cifra se anima doar cand exista o masuratoare; altfel ramane liniuta. #}
-        <span class="stat-num"{% if stats.avgSec > 0 %} data-count="{{ stats.avgSec }}" data-suffix="s"{% endif %}>{{ stats.avgTime }}</span>
-        <span class="stat-label" data-i18n="stat-time">timp mediu</span>
-      </span>
-    </div>
-
   </div>
 
   <div class="viz-row">
