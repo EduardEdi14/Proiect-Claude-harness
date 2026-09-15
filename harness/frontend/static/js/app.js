@@ -772,18 +772,39 @@
       function (c) { c.disabled = true; });
   }
 
+  var TYPING_MSGS = [
+    "Gândesc...", "Analizez cererea...", "Pregătesc răspunsul...",
+    "Construiesc pagina...", "Scriu codul HTML...", "Finalizez detaliile...",
+    "Verific structura...", "Aplic stilurile...",
+  ];
   function showTyping() {
+    if (typingStatusInterval) { clearInterval(typingStatusInterval); typingStatusInterval = null; }
     var d = document.createElement("div");
     d.className = "bubble bubble--bot typing-bubble";
     d.id = "ab-typing";
     d.innerHTML = markAvatar() +
-      '<div class="bubble-body"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+      '<div class="bubble-body">' +
+        '<span class="typing-status">' + TYPING_MSGS[0] + '</span>' +
+      '</div>';
     list.appendChild(d);
     scroll();
+    var idx = 0;
+    var statusEl = d.querySelector(".typing-status");
+    typingStatusInterval = setInterval(function() {
+      if (!statusEl) return;
+      idx = (idx + 1) % TYPING_MSGS.length;
+      statusEl.classList.add("typing-status--out");
+      setTimeout(function() {
+        if (!statusEl) return;
+        statusEl.textContent = TYPING_MSGS[idx];
+        statusEl.classList.remove("typing-status--out");
+      }, 250);
+    }, 2500);
   }
   function hideTyping() {
     var t = document.getElementById("ab-typing");
     if (t) t.remove();
+    if (typingStatusInterval) { clearInterval(typingStatusInterval); typingStatusInterval = null; }
   }
 
   function addTotal(cost) {
@@ -1107,11 +1128,12 @@
   var configurat  = container.getAttribute("data-configurat") === "1";
   var resume      = container.getAttribute("data-resume") === "1";
 
-  var currentHtml   = "";
-  var currentProjId = container.getAttribute("data-project-id") || null;
-  var firstBuild    = true;
-  var busy          = false;
-  var typingEl      = null;
+  var currentHtml      = "";
+  var currentProjId    = container.getAttribute("data-project-id") || null;
+  var firstBuild       = true;
+  var busy             = false;
+  var typingEl         = null;
+  var typingStatusInterval = null;
 
   // ── Welcome / resume init ─────────────────────────────────────────────
   function init() {
