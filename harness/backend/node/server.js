@@ -1,4 +1,5 @@
 'use strict';
+require('dotenv').config();
 // server.js — Serverul Express al Libra Maker.
 // Stack: Node.js 20 + Express 4 + Nunjucks + express-session + bcryptjs.
 //
@@ -7,8 +8,9 @@
 
 const path    = require('path');
 const express = require('express');
-const session = require('express-session');
-const bcrypt  = require('bcryptjs');
+const session        = require('express-session');
+const pgSession      = require('connect-pg-simple')(session);
+const bcrypt         = require('bcryptjs');
 const multer  = require('multer');
 const nunjucks = require('nunjucks');
 
@@ -43,6 +45,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: '30mb' }));
 
 app.use(session({
+  store: process.env.DATABASE_URL ? new pgSession({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+  }) : undefined,
   secret:            process.env.SESSION_SECRET || 'libra-maker-dev-secret-2025',
   resave:            false,
   saveUninitialized: false,
@@ -360,6 +366,7 @@ app.get('/proiect/:id/detalii', auth(async (req, res) => {
     name:         p.name,
     description:  p.description,
     error:        '',
+    templates:    TEMPLATES,
     configurat:   agent.isConfigured(),
     agentNume:    agent.NUME,
     model:        agent.DEPLOYMENT,
