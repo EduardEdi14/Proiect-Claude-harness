@@ -531,6 +531,57 @@
     "no-bypass-3": "Every session stays in the log: who, which skill, which fields, which code.",
   };
 
+  // Șabloanele din meniul de pe ecranul de construire vin din store.js, deci nu
+  // au chei data-i18n. Le traducem după numele românesc, singurul identificator
+  // pe care serverul îl pune în data-value. `tpl` păstrează parantezele drepte:
+  // meniul selectează primul [...] ca să poți scrie direct peste el.
+  var TPL_EN = {
+    "Tablou de bord": { name: "Dashboard",
+      tpl: "Dashboard for [activity] in [quarter/month]: total [metric 1], [metric 2] and [metric 3], with a monthly chart and a detailed table by [branches/departments]." },
+    "Grafic din date": { name: "Data chart",
+      tpl: "Chart showing how [metric] evolved month by month in [year]: [month 1] [value], [month 2] [value], [month 3] [value], [month 4] [value], [month 5] [value], [month 6] [value]." },
+    "Raport": { name: "Report",
+      tpl: "Report for [management/department] about [subject] in [month/quarter]: [headline figure] ([comparison with the previous period]), [key observation]. I propose [recommended actions]." },
+    "Tabel de date": { name: "Data table",
+      tpl: "Table with [activity] for [period]: columns for [field 1], [field 2], [field 3] and [field 4], with filtering, sorting and CSV export." },
+    "Pagina de informare": { name: "Info page",
+      tpl: "Information page about [subject]: [short introduction], [main details] and [contact or next step]." },
+    "Formular de colectare": { name: "Collection form",
+      tpl: "Form for [purpose]: fields for [field 1], [field 2], [field 3] and [field 4]. Automatic confirmation after submitting." },
+    "Prezentare": { name: "Presentation",
+      tpl: "Presentation for [committee/meeting] about [subject]: the current situation, [problem/opportunity], [proposal with supporting arguments], [costs and benefits] and a request for approval on [decision]." },
+    "Cerere": { name: "Request form",
+      tpl: "Request form for [type of request]: fields for [field 1], [field 2], the reason for the request and the date it is needed by. Automatic confirmation after submitting." },
+    "Sondaj": { name: "Survey",
+      tpl: "Survey about [subject] for [audience]: questions on [topic 1], [topic 2], a satisfaction rating from 1 to 5 and a free-text field for suggestions." },
+    "Campanie": { name: "Campaign",
+      tpl: "Page for the internal campaign [campaign name] ([start date]-[end date]): [campaign goal], [main details] and contact [person in charge], [department]." },
+    "Onboarding": { name: "Onboarding",
+      tpl: "Onboarding page for [role/department]: the first [days/weeks] at the company, who is responsible for [area 1] and [area 2], the list of required access rights and the integration schedule." },
+    "Anunt": { name: "Announcement",
+      tpl: "Internal announcement about [subject]: what changes from [date], [main details], frequently asked questions and [the action required from the employee]." },
+    "Eveniment": { name: "Event",
+      tpl: "Page for the event [event name] on [date] at [location]: the hour-by-hour programme, [main details] and contact [person in charge]." },
+    "Echipa": { name: "Team",
+      tpl: "Presentation page for the team [team/department name]: the team mission, members with their roles, active projects and [contact for internal collaboration]." },
+    "FAQ": { name: "FAQ",
+      tpl: "FAQ page about [subject]: answers to [question 1], [question 2], [question 3] and a contact for further questions at [person/email]." },
+    "Feedback": { name: "Feedback",
+      tpl: "Feedback form after [activity/training/event]: what was useful, what was missing, a rating from 1 to 5 for [criterion] and a free-text field for suggestions." },
+    "Program": { name: "Schedule",
+      tpl: "Schedule for [event/activity] on [date] at [location]: the time slots, [description of the activities/sessions], [presenters/people in charge] and contact information." },
+    "Beneficii": { name: "Benefits",
+      tpl: "Page about the benefits for [type of employee]: [benefit 1] - how to access it, [benefit 2] - how to access it and [benefit 3] - how to access it." },
+    "Cursuri": { name: "Courses",
+      tpl: "Registration form for [course/training programme] in [period]: fields for [field 1], picking the course from a list, the experience level and [the preferred time slot/location]." },
+    "Regulament": { name: "Regulations",
+      tpl: "Page with the rules for [activity/contest/procedure]: eligibility conditions, [the main rules], [deadlines and exceptions] and contact [person in charge]." },
+    "Recrutare": { name: "Recruitment",
+      tpl: "Referral form for the position of [position title] in [department]: fields for the candidate name, CV or LinkedIn profile, the relationship to the referrer and a short argument." },
+    "Ghid": { name: "Guide",
+      tpl: "Guide about [subject] for [audience]: [section 1 - description], [section 2 - description], [section 3 - description] and [contact or further resources]." },
+  };
+
   var savedRO = {}, savedROPH = {};
 
   // Relative time ("acum 3 zile"): the server sends unit + count as data
@@ -578,6 +629,23 @@
         if (Object.prototype.hasOwnProperty.call(savedROPH, key)) el.setAttribute("placeholder", savedROPH[key]);
       }
     });
+    // Meniul de șabloane: numele din listă plus textul care ajunge în casetă.
+    // data-tpl-en rămâne pe element, ca selecția să ia varianta potrivită.
+    Array.prototype.forEach.call(document.querySelectorAll(".tpl-drop-item"), function (el) {
+      var t = TPL_EN[el.getAttribute("data-value")];
+      if (!t) return;
+      if (en) {
+        el.textContent = t.name;
+        el.setAttribute("data-tpl-en", t.tpl);
+      } else {
+        el.textContent = el.getAttribute("data-value");
+        el.removeAttribute("data-tpl-en");
+      }
+    });
+    // Șablonul deja ales: eticheta butonului urmează limba, nu rămâne în urmă.
+    var tplSel = document.querySelector(".tpl-drop-item[aria-selected='true']");
+    var tplVal = document.getElementById("tpl-drop-val");
+    if (tplSel && tplVal) tplVal.textContent = (tplSel.textContent || "").trim();
   }
 
   var langBtns = document.querySelectorAll("[data-lang-set]");
@@ -1225,9 +1293,12 @@
 
   function applyTplItem(item) {
     var tplSkill = item.getAttribute("data-skill") || "";
-    var tplText  = item.getAttribute("data-tpl")   || "";
-    var tplName  = item.getAttribute("data-value") || "";
-    if (tplDropVal) tplDropVal.textContent = tplName;
+    // data-tpl-en e pus de comutatorul de limbă; fără el rămâne textul românesc.
+    var tplText  = item.getAttribute("data-tpl-en") || item.getAttribute("data-tpl") || "";
+    Array.prototype.forEach.call(document.querySelectorAll(".tpl-drop-item"), function (el) {
+      el.setAttribute("aria-selected", el === item ? "true" : "false");
+    });
+    if (tplDropVal) tplDropVal.textContent = (item.textContent || "").trim();
     if (tplSkill) {
       skill = tplSkill;
       container.setAttribute("data-skill", tplSkill);

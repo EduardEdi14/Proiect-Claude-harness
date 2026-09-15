@@ -101,6 +101,7 @@ type detailsData struct {
 	Name        string
 	Description string
 	Error       string
+	Preset      string // text pre-completat din ?tpl= (sablon din "Descopera")
 	// SkillPreset e true cand skill-ul a fost ales inainte de chat (link direct sau editare
 	// proiect). False inseamna ca agentul va pune intrebarea de tip in conversatie.
 	SkillPreset bool
@@ -249,6 +250,7 @@ func (s *Server) handleDetails(w http.ResponseWriter, r *http.Request, u *sessio
 	s.rend.Page(w, http.StatusOK, "details", detailsData{
 		Page:        Page{Title: "Proiect nou", Nav: "proiect-nou", SidebarFoot: "restricted", User: u},
 		Tool:        tool,
+		Preset:      r.URL.Query().Get("tpl"),
 		SkillPreset: skillPreset,
 	})
 }
