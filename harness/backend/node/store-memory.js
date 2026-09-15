@@ -112,6 +112,26 @@ class MemoryStore {
     return p;
   }
 
+  async createBuilt(userID, skillID, name, description, durationSec) {
+    const id = newID();
+    const now = new Date();
+    const p  = new Project({
+      id, userID, skillID, name, description,
+      workspacePath: `workspaces/${userID}/${id}`,
+      status: STATUS.DRAFT, durationSec: durationSec || 0,
+      createdAt: now, updatedAt: now, completedAt: now,
+    });
+    this._projects.set(id, p);
+    return p;
+  }
+
+  async updateDuration(id, durationSec) {
+    const p = this._projects.get(id);
+    if (!p) return;
+    p.durationSec = durationSec;
+    p.updatedAt   = new Date();
+  }
+
   async update(id, skillID, name, description) {
     const p = this._projects.get(id);
     if (!p) return;

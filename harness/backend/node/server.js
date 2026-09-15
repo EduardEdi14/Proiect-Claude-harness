@@ -445,28 +445,37 @@ app.post('/asistent/construieste', auth(async (req, res, next) => {
     return res.status(503).json({ eroare: 'Asistentul nu e configurat pe acest server.' });
   }
   try {
-    const nume      = (req.body.nume      || '').trim().slice(0, 120);
+    const nume      = (req.body.nume      || '').trim().slice(0, 120) || 'Pagina mea';
     const descriere = (req.body.descriere || '').trim().slice(0, 4000);
     const skill     = (req.body.skill     || '').trim();
-    if (nume.length < 3 || descriere.length < 20) {
-      return res.status(400).json({ eroare: 'Mai avem nevoie de un nume si de o descriere.' });
+    const imagini   = Array.isArray(req.body.imagini) ? req.body.imagini.slice(0, 5) : [];
+    const displayText = req.body.display_text || descriere;
+
+    // Salvam proiectul imediat (ciorna) — astfel apare in istoric chiar daca
+    // descrierea e prea scurta, generarea esueaza sau browserul e inchis.
+    const p = await store.createBuilt(req.user.id, skill, nume, descriere || nume, 0);
+    agent.salveazaChat(p.workspacePath, [{ role: 'user', text: displayText || nume }]);
+
+    if (descriere.length < 20) {
+      const eroareVera = 'Descrie mai pe larg ce pagină vrei — câteva rânduri sunt suficiente.';
+      agent.salveazaChat(p.workspacePath, [
+        { role: 'user', text: displayText || nume },
+        { role: 'vera', text: eroareVera },
+      ]);
+      return res.status(400).json({ eroare: eroareVera, proiectId: p.id });
     }
 
-    const imagini = Array.isArray(req.body.imagini) ? req.body.imagini.slice(0, 5) : [];
     const inceput = Date.now();
     const r = await agent.construieste({ nume, descriere, skill, imagini });
     const durata = Math.max(1, Math.round((Date.now() - inceput) / 1000));
 
-    // Pagina nu ramane doar in previzualizare: devine un proiect real, cu
-    // fisierele scrise in workspace-ul sesiunii, exact ca la generarea din
-    // container. De acolo poate fi reluata si trimisa echipei de dezvoltare.
-    const p = await store.createBuilt(req.user.id, skill, nume, descriere, durata);
     agent.salveazaPagina(p.workspacePath, r.html, { nume, descriere, skill });
-    const displayText = req.body.display_text || descriere;
     agent.salveazaChat(p.workspacePath, [
       { role: 'user', text: displayText },
       { role: 'vera', text: 'Gata! Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva — culori, texte, structură.', cost: r.cost, durata },
     ]);
+    await store.updateDuration(p.id, durata);
+    req.session.chat = [];
 
     return res.json({ ...r, proiectId: p.id, proiectURL: `/proiect/${p.id}`, durata });
   } catch (err) { next(err); }
@@ -490,16 +499,18 @@ app.post('/asistent/modifica', auth(async (req, res, next) => {
     const r = await agent.modifica(mesaj, htmlCurent, imaginiMod);
     const durataMod = Math.max(1, Math.round((Date.now() - inceputMod) / 1000));
 
-    // Actualizeaza fisierul in workspace-ul proiectului doar daca s-a generat HTML nou.
-    if (proiectId && r.html) {
+    // Salveaza pagina si mesajele in workspace-ul proiectului.
+    if (proiectId) {
       try {
         const p = await store.getProject(proiectId);
         if (p && p.userID === req.user.id) {
-          agent.salveazaPagina(p.workspacePath, r.html, {
-            nume:      p.name,
-            descriere: p.description,
-            skill:     p.skillID,
-          });
+          if (r.html) {
+            agent.salveazaPagina(p.workspacePath, r.html, {
+              nume:      p.name,
+              descriere: p.description,
+              skill:     p.skillID,
+            });
+          }
           const chat = agent.citesteChat(p.workspacePath);
           const displayTextModif = req.body.display_text || mesaj;
           chat.push({ role: 'user', text: displayTextModif });
