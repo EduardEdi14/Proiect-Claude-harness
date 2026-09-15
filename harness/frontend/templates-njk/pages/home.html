@@ -16,7 +16,7 @@
           <div class="hero-copy">
             <span class="hero-eyebrow">Libra Maker</span>
             <h1 class="hero-title"><span data-i18n="hero-greeting">Ce construim azi, </span>{{ user.firstName() }}? <span data-i18n="hero-sub">Alege un început.</span></h1>
-            <p class="hero-lede">{{ stats.recentPhrase }} <span data-i18n="hero-lede">Descrie pagina în cuvintele tale, iar noi o pregătim pentru echipa de dezvoltare.</span></p>
+            <p class="hero-lede"><span data-recent-phrase>{{ stats.recentPhrase }}</span> <span data-i18n="hero-lede">Descrie pagina în cuvintele tale, iar noi o pregătim pentru echipa de dezvoltare.</span></p>
             <div class="hero-actions">
               <a class="hero-btn" href="/proiect-nou" data-i18n="hero-start">Start proiect nou</a>
               <a class="hero-btn hero-btn--ghost" href="#descopera" data-i18n="hero-discover">Descoperă șabloane</a>
@@ -51,7 +51,10 @@
           <div id="project-list">{% include "partials/project-list.html" %}</div>
         </div>
 
-        {# ---------- Descopera ---------- #}
+        {# ---------- Descopera ----------
+           Aceleasi 22 de sabloane, in aceeasi ordine, ca in meniul din ecranul
+           de construire (TEMPLATES din store.js). data-value e numele romanesc:
+           comutatorul de limba traduce dupa el numele si textul din data-tpl. #}
         <section class="discover" id="descopera">
           <div class="discover-head">
             <h2 class="discover-title" data-i18n="discover-title">Descoperă șabloane pentru orice nevoie internă</h2>
@@ -67,148 +70,136 @@
 
           <div class="discover-grid" id="discover-grid">
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="dashboard"
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="dashboard" data-value="Tablou de bord"
               data-tpl="Tablou de bord cu situatia [activitate] din [trimestrul/luna]: total [indicator 1], [indicator 2] si [indicator 3], cu un grafic pe luni si un tabel detaliat pe [sucursale/departamente].">
-              <span class="tpl-thumb th--a"><span class="th-tag">Dashboard</span><span class="th-h"></span><span class="th-bars"><i></i><i></i><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name">Tablou de bord</span><span class="tpl-kind">Tablou de bord</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+              <span class="tpl-thumb th--a"><span class="th-tag" data-i18n="tool-dashboard-name">Tablou de bord</span><span class="th-h"></span><span class="th-bars"><i></i><i></i><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Tablou de bord</span><span class="tpl-kind" data-i18n="tool-dashboard-name">Tablou de bord</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="chart"
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="chart" data-value="Grafic din date"
               data-tpl="Grafic cu evolutia [metrica] pe luni in [an]: [luna 1] [valoare], [luna 2] [valoare], [luna 3] [valoare], [luna 4] [valoare], [luna 5] [valoare], [luna 6] [valoare].">
-              <span class="tpl-thumb th--b"><span class="th-tag">Grafic</span><span class="th-h"></span><span class="th-bars"><i></i><i></i><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name">Grafic din date</span><span class="tpl-kind">Grafic</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+              <span class="tpl-thumb th--b"><span class="th-tag" data-i18n="tool-chart-name">Grafic</span><span class="th-h"></span><span class="th-bars"><i></i><i></i><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Grafic din date</span><span class="tpl-kind" data-i18n="tool-chart-name">Grafic din date</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="report"
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="report" data-value="Raport"
               data-tpl="Raport pentru [conducere/departament] despre [subiect] din [luna/trimestrul]: [cifra principala] ([comparatie fata de perioada anterioara]), [observatie cheie]. Propun [actiuni recomandate].">
-              <span class="tpl-thumb th--c"><span class="th-tag">Raport</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name">Raport</span><span class="tpl-kind">Raport</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+              <span class="tpl-thumb th--c"><span class="th-tag" data-i18n="tool-report-name">Raport</span><span class="th-h"></span><span class="th-bars"><i></i><i></i><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Raport</span><span class="tpl-kind" data-i18n="tool-report-name">Raport</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="data-table"
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="data-table" data-value="Tabel de date"
               data-tpl="Tabel cu situatia [activitate] din [perioada]: coloane pentru [camp 1], [camp 2], [camp 3] si [camp 4], cu filtrare, sortare si export CSV.">
-              <span class="tpl-thumb th--d"><span class="th-tag">Date</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name">Tabel de date</span><span class="tpl-kind">Tabel de date</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+              <span class="tpl-thumb th--d"><span class="th-tag" data-i18n="tool-data-table-name">Tabel de date</span><span class="th-h"></span><span class="th-bars"><i></i><i></i><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Tabel de date</span><span class="tpl-kind" data-i18n="tool-data-table-name">Tabel de date</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page"
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page" data-value="Pagina de informare"
               data-tpl="Pagina de informare despre [subiect]: [introducere scurta], [detalii principale] si [contact sau actiune de urmat].">
-              <span class="tpl-thumb th--e"><span class="th-tag">Informare</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-thumb th--e"><span class="th-tag" data-i18n="kind-info">Informare</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
               <span class="tpl-body"><span class="tpl-name">Pagina de informare</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page"
+            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page" data-value="Formular de colectare"
               data-tpl="Formular pentru [scop]: campuri pentru [camp 1], [camp 2], [camp 3] si [camp 4]. Confirmare automata dupa trimitere.">
-              <span class="tpl-thumb th--f"><span class="th-tag">Formular</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-thumb th--f"><span class="th-tag" data-i18n="kind-form">Formular</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
               <span class="tpl-body"><span class="tpl-name">Formular de colectare</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="slides"
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="slides" data-value="Prezentare"
               data-tpl="Prezentare pentru [comitet/sedinta] despre [subiect]: situatia curenta, [problema/oportunitatea], [propunere cu argumente], [costuri si beneficii] si cerere de aprobare pentru [decizie].">
-              <span class="tpl-thumb th--g"><span class="th-tag">Slides</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name">Prezentare</span><span class="tpl-kind">Prezentare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+              <span class="tpl-thumb th--g"><span class="th-tag" data-i18n="tool-slides-name">Prezentare</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Prezentare</span><span class="tpl-kind" data-i18n="tool-slides-name">Prezentare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page"
+            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page" data-value="Cerere"
               data-tpl="Formular de cerere pentru [tipul de cerere]: campuri pentru [camp 1], [camp 2], motivul cererii si data la care este necesar. Confirmare automata dupa trimitere.">
-              <span class="tpl-thumb th--h"><span class="th-tag">Cerere</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-thumb th--h"><span class="th-tag" data-i18n="tpl-it-tag">Cerere</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
               <span class="tpl-body"><span class="tpl-name">Cerere</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="eveniment" data-skill="form-page"
-              data-tpl="O pagină pentru campania internă Green Week: o scurtă introducere despre programul de colectare selectivă, lista punctelor de reciclare din sediu și un formular de înscriere cu nume, departament, e-mail și ziua în care vrei să participi.">
-              <span class="tpl-thumb th--d"><span class="th-tag" data-i18n="tpl-green-week-tag">Campanie</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-green-week-name">Green Week — înscrieri</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page" data-value="Sondaj"
+              data-tpl="Sondaj despre [subiect] pentru [audienta]: intrebari despre [tema 1], [tema 2], o nota de satisfactie de la 1 la 5 si camp liber pentru sugestii.">
+              <span class="tpl-thumb th--a"><span class="th-tag" data-i18n="tpl-canteen-tag">Sondaj</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Sondaj</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="hr" data-skill="info-page"
-              data-tpl="O pagină de informare pentru colegii nou veniți: primele zile în companie, cine răspunde de ce, lista de accesuri pe care trebuie să le ceară și un calendar al primei săptămâni.">
-              <span class="tpl-thumb th--a"><span class="th-tag" data-i18n="tpl-onboarding-tag">Onboarding</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-onboarding-name">Ghid pentru colegii noi</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="eveniment" data-skill="info-page" data-value="Campanie"
+              data-tpl="Pagina pentru campania interna [numele campaniei] ([data start]-[data end]): [scopul campaniei], [detalii principale] si contact [persoana responsabila], [departament].">
+              <span class="tpl-thumb th--b"><span class="th-tag" data-i18n="tpl-green-week-tag">Campanie</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Campanie</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page"
-              data-tpl="Un formular scurt prin care colegii spun ce meniuri vor la cantină, în ce interval orar iau prânzul și dacă au restricții alimentare.">
-              <span class="tpl-thumb th--c"><span class="th-tag" data-i18n="tpl-canteen-tag">Sondaj</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-canteen-name">Chestionar cantină</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="hr" data-skill="info-page" data-value="Onboarding"
+              data-tpl="Pagina de onboarding pentru [rol/departament]: primele [zile/saptamani] in companie, cine raspunde de [domeniu 1] si [domeniu 2], lista de accesuri necesare si calendarul de integrare.">
+              <span class="tpl-thumb th--c"><span class="th-tag" data-i18n="tpl-onboarding-tag">Onboarding</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Onboarding</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page"
-              data-tpl="Un anunț intern despre modificările politicii de concediu: regulile noi, un FAQ cu cele mai frecvente întrebări și un buton de confirmare că angajatul a luat la cunoștință.">
-              <span class="tpl-thumb th--b"><span class="th-tag" data-i18n="tpl-concediu-tag">Anunț</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-concediu-name">Politica de concediu</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page" data-value="Anunt"
+              data-tpl="Anunt intern despre [subiect]: ce se schimba de la [data], [detalii principale], intrebari frecvente si [actiunea necesara din partea angajatului].">
+              <span class="tpl-thumb th--d"><span class="th-tag" data-i18n="tpl-concediu-tag">Anunț</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Anunt</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="eveniment" data-skill="form-page"
-              data-tpl="Formular de înscriere pentru evenimentul Team Building: câmpuri pentru nume, departament, număr de telefon și preferință de meniu (vegetarian sau standard).">
-              <span class="tpl-thumb th--e"><span class="th-tag" data-i18n="tpl-teambuilding-tag">Eveniment</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-teambuilding-name">Team Building — înscrieri</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="eveniment" data-skill="info-page" data-value="Eveniment"
+              data-tpl="Pagina pentru evenimentul [numele evenimentului] din [data] la [locatie]: programul pe ore, [detalii principale] si contact [persoana responsabila].">
+              <span class="tpl-thumb th--e"><span class="th-tag" data-i18n="tpl-teambuilding-tag">Eveniment</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Eveniment</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page"
-              data-tpl="Pagină de prezentare a departamentului: misiunea echipei, membrii cu rolurile lor, proiectele în desfășurare și un formular de contact pentru colaborări interne.">
-              <span class="tpl-thumb th--f"><span class="th-tag" data-i18n="tpl-dept-tag">Echipă</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-dept-name">Prezentare departament</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page" data-value="Echipa"
+              data-tpl="Pagina de prezentare a echipei [numele echipei/departamentului]: misiunea echipei, membrii cu rolurile lor, proiectele active si [contact pentru colaborari interne].">
+              <span class="tpl-thumb th--f"><span class="th-tag" data-i18n="tpl-dept-tag">Echipă</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Echipa</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="hr" data-skill="info-page"
-              data-tpl="Pagină cu întrebări frecvente pentru angajați: cum funcționează accesul la sisteme, pe cine contactezi pentru IT, HR și Facilities, plus un ghid rapid despre beneficii.">
-              <span class="tpl-thumb th--g"><span class="th-tag" data-i18n="tpl-faq-tag">FAQ</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-faq-name">Întrebări frecvente</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page" data-value="FAQ"
+              data-tpl="Pagina FAQ despre [subiect]: raspunsuri la [intrebarea 1], [intrebarea 2], [intrebarea 3] si contact pentru intrebari suplimentare la [persoana/email].">
+              <span class="tpl-thumb th--g"><span class="th-tag" data-i18n="tpl-faq-tag">FAQ</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">FAQ</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page"
-              data-tpl="Formular de feedback după o sesiune de training intern: ce a fost util, ce lipsea, o notă de la 1 la 5 și un câmp liber pentru sugestii.">
-              <span class="tpl-thumb th--h"><span class="th-tag" data-i18n="tpl-feedback-tag">Feedback</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-feedback-name">Feedback după training</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page" data-value="Feedback"
+              data-tpl="Formular de feedback dupa [activitate/training/eveniment]: ce a fost util, ce lipsea, o nota de la 1 la 5 pentru [criteriu] si camp liber pentru sugestii.">
+              <span class="tpl-thumb th--h"><span class="th-tag" data-i18n="tpl-feedback-tag">Feedback</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Feedback</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page"
-              data-tpl="Pagină cu rezultatele trimestriale ale echipei: principalele cifre, o scurtă interpretare a lor și pașii următori pentru trimestrul care vine.">
-              <span class="tpl-thumb th--b"><span class="th-tag" data-i18n="tpl-quarterly-tag">Raport</span><span class="th-h"></span><span class="th-bars"><i></i><i></i><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-quarterly-name">Rezultate trimestriale</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="eveniment" data-skill="info-page" data-value="Program"
+              data-tpl="Program pentru [evenimentul/activitatea] din [data] la [locatie]: intervalele orare, [descrierea activitatilor/sesiunilor], [prezentatorii/responsabilii] si informatii de contact.">
+              <span class="tpl-thumb th--a"><span class="th-tag" data-i18n="tpl-conference-tag">Program</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Program</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="eveniment" data-skill="info-page"
-              data-tpl="Pagină pentru o conferință internă: programul pe ore, descrierea sesiunilor, prezentatorii și locul de desfășurare.">
-              <span class="tpl-thumb th--a"><span class="th-tag" data-i18n="tpl-conference-tag">Program</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-conference-name">Program conferință</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="hr" data-skill="info-page" data-value="Beneficii"
+              data-tpl="Pagina despre beneficiile [tipul de angajat]: [beneficiul 1] - cum se acceseaza, [beneficiul 2] - cum se acceseaza si [beneficiul 3] - cum se acceseaza.">
+              <span class="tpl-thumb th--b"><span class="th-tag" data-i18n="tpl-benefits-tag">Beneficii</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Beneficii</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="formular" data-skill="form-page"
-              data-tpl="Formular de solicitare echipament IT: tipul de echipament, motivul cererii, departamentul și data la care e nevoie de el.">
-              <span class="tpl-thumb th--c"><span class="th-tag" data-i18n="tpl-it-tag">Cerere</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-it-name">Solicitare echipament IT</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="hr" data-skill="form-page" data-value="Cursuri"
+              data-tpl="Formular de inscriere la [cursul/programul de training] din [perioada]: campuri pentru [camp 1], alegerea cursului din lista, nivelul de experienta si [intervalul orar/locatia preferata].">
+              <span class="tpl-thumb th--c"><span class="th-tag" data-i18n="tpl-courses-tag">Cursuri</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Cursuri</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="hr" data-skill="info-page"
-              data-tpl="Pagină despre beneficiile angajaților: asigurarea medicală, zilele libere suplimentare, abonamentele sportive și cum se accesează fiecare dintre ele.">
-              <span class="tpl-thumb th--d"><span class="th-tag" data-i18n="tpl-benefits-tag">Beneficii</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-benefits-name">Ghid de beneficii</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page" data-value="Regulament"
+              data-tpl="Pagina cu regulamentul [activitatii/concursului/procedurii]: conditiile de participare, [regulile principale], [termene si exceptii] si contact [persoana responsabila].">
+              <span class="tpl-thumb th--d"><span class="th-tag" data-i18n="tpl-contest-tag">Regulament</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Regulament</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="eveniment" data-skill="form-page"
-              data-tpl="Formular de înscriere la cursurile interne din acest semestru: alegerea cursului, nivelul de experiență și intervalul orar preferat.">
-              <span class="tpl-thumb th--e"><span class="th-tag" data-i18n="tpl-courses-tag">Cursuri</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-courses-name">Înscriere la cursuri</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="hr" data-skill="form-page" data-value="Recrutare"
+              data-tpl="Formular de recomandare pentru pozitia de [denumirea pozitiei] din [departament]: campuri pentru numele candidatului, CV sau profil LinkedIn, relatia cu recomandantul si un scurt argument.">
+              <span class="tpl-thumb th--e"><span class="th-tag" data-i18n="tpl-referral-tag">Recrutare</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Recrutare</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page"
-              data-tpl="Pagină cu regulamentul unui concurs intern pentru angajați: condițiile de participare, premiile, perioada de desfășurare și modul de jurizare.">
-              <span class="tpl-thumb th--f"><span class="th-tag" data-i18n="tpl-contest-tag">Regulament</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-contest-name">Regulament concurs</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
-            </button>
-
-            <button class="tpl-card" type="button" data-cat="hr" data-skill="form-page"
-              data-tpl="Formular de recomandare a unui candidat: numele persoanei recomandate, poziția vizată, relația cu recomandantul și un scurt argument.">
-              <span class="tpl-thumb th--g"><span class="th-tag" data-i18n="tpl-referral-tag">Recrutare</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-referral-name">Recomandă un candidat</span><span class="tpl-kind" data-i18n="kind-form">Formular de colectare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
-            </button>
-
-            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page"
-              data-tpl="Pagină cu instrucțiuni pentru lucrul de acasă: echipamentul necesar, regulile de securitate a datelor, programul de disponibilitate și canalele de comunicare.">
-              <span class="tpl-thumb th--h"><span class="th-tag" data-i18n="tpl-remote-tag">Ghid</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
-              <span class="tpl-body"><span class="tpl-name" data-i18n="tpl-remote-name">Reguli pentru munca de acasă</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
+            <button class="tpl-card" type="button" data-cat="informare" data-skill="info-page" data-value="Ghid"
+              data-tpl="Ghid despre [subiect] pentru [audienta]: [sectiunea 1 - descriere], [sectiunea 2 - descriere], [sectiunea 3 - descriere] si [contact sau resurse suplimentare].">
+              <span class="tpl-thumb th--f"><span class="th-tag" data-i18n="tpl-remote-tag">Ghid</span><span class="th-h"></span><span class="th-l"></span><span class="th-row"><i></i><i></i><i></i></span></span>
+              <span class="tpl-body"><span class="tpl-name">Ghid</span><span class="tpl-kind" data-i18n="kind-info">Pagină de informare</span><span class="tpl-go" data-i18n="tpl-go">Pornește →</span></span>
             </button>
 
           </div>
