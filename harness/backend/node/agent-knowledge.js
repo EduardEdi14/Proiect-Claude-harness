@@ -38,7 +38,9 @@ function citesteRezumat(text) {
 
 // Doar sectiunea care chiar spune ce NU face skill-ul. Titlurile de tip
 // "Rules" contin reguli de stil (aliniere, latime de rand) - zgomot in prompt.
-const TITLURI_LIMITE = /^## What this template does not do\s*\n([\s\S]*?)(?=\n## |\n*$)/m;
+// Fara flagul "m", "$" prinde doar sfarsitul textului. Cu el, "$" potrivea si
+// capatul primei linii, deci din trei limite ajungea la agent doar prima.
+const TITLURI_LIMITE = /\n## What this template does not do\s*\n([\s\S]*?)(?=\n## |$)/;
 
 /** Ce nu face skill-ul, acolo unde autorul a scris-o explicit. */
 function citesteLimite(text) {

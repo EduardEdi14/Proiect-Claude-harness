@@ -397,6 +397,9 @@ a{color:var(--link);text-decoration:none}
 .focus-shell{display:flex;min-height:100vh;background:var(--bg);align-items:stretch}
 .focus-main{flex:1;min-width:0;padding:38px 44px;display:flex;flex-direction:column;gap:22px}
 .focus-inner{width:100%;max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:20px;flex:1}
+/* Comutatoarele de limba si tema, pe ecranele fara bara de sus. Alinierea la
+   dreapta vine din margin-left:auto al .lang-toggle, ca si in bara. */
+.focus-tools{display:flex;align-items:center;gap:10px;flex:none}
 .side-panel{
   width:var(--side-panel-w);flex:none;background:linear-gradient(170deg,#8E1226,#C2182F);
   padding:40px 34px;display:flex;flex-direction:column;gap:20px;justify-content:center;

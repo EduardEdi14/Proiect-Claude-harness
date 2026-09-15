@@ -18,6 +18,30 @@ The colleague never sees the word "skill" — they see a template card with a fr
 | `form-page` | Formular de colectare | Sign-up / survey with validation and confirmation (front end only) |
 | `slides` | Prezentare | 6-12 HTML slides, arrow-key navigation, one slide per printed page |
 
+The seven above are shaped by the **kind of output**. The fifteen below are shaped by the
+**situation**: each one is a page a colleague asks for again and again, always with the same
+sections in the same order. They specialise `info-page` or `form-page` — same house style and
+shared reference, but with the structure already decided so the colleague does not have to
+describe it. One template on screen 02/04 maps to exactly one of these.
+
+| Template id (`skill_id`) | Name shown in the UI | Specialises | What it produces |
+|---|---|---|---|
+| `campaign` | Campanie internă | `info-page` | Campaign page: period, deadline to join, how to take part, locations, owner |
+| `onboarding` | Pagină de onboarding | `info-page` | First days/weeks as a timeline, who owns which area, access checklist |
+| `announcement` | Anunț intern | `info-page` | What changes, effective date, before/after comparison, required action, FAQ |
+| `event` | Pagină de eveniment | `info-page` | What/when/where, hour-by-hour programme, practical details, contact |
+| `team` | Prezentare echipă | `info-page` | Mission, members with roles and "ask me about", current work, how to request |
+| `faq` | Întrebări frecvente | `info-page` | Questions grouped by theme as `<details>`, most-asked first, contact |
+| `schedule` | Program pe intervale | `info-page` | Time-slot table: what, who leads, where; track legend; prints cleanly |
+| `benefits` | Ghid de beneficii | `info-page` | One block per benefit, same three headings each: what / who / how to access |
+| `regulations` | Regulament | `info-page` | Numbered citable clauses, eligibility, period, judging, deadlines, exceptions |
+| `guide` | Ghid pas cu pas | `info-page` | Prerequisites, numbered steps each with its outcome, troubleshooting, help |
+| `request` | Formular de cerere | `form-page` | What is requested, justification, approver, needed-by date |
+| `survey` | Sondaj intern | `form-page` | Grouped questions on one consistent rating scale, one free-text field |
+| `feedback` | Formular de feedback | `form-page` | Ratings on fixed criteria, what was useful / missing, optional identity |
+| `course-signup` | Înscriere la cursuri | `form-page` | Course choice with level and preferred slot, plus a second choice |
+| `referral` | Recomandă un candidat | `form-page` | Position, candidate, CV as link, relationship, argument, consent confirmed |
+
 `_common/` is not a skill (no `SKILL.md`), it is the shared reference every skill reads:
 
 | File | Content |

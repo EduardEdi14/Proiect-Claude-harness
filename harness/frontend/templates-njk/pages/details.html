@@ -10,6 +10,8 @@
         <div class="ab-split-root chat-split"
              data-initials="{{ user.initials() }}"
              data-skill="{{ tool.id if tool else '' }}"
+             {# Numele sablonului ales in galeria de pe Acasa (?tpl=). #}
+             data-preselect="{{ preset }}"
              data-configurat="{% if configurat %}1{% else %}0{% endif %}"
              {% if projectID %}data-project-id="{{ projectID }}"{% endif %}
              {% if projectID %}data-resume="1"{% endif %}>
