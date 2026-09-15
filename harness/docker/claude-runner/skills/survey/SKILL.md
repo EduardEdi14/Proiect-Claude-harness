@@ -11,6 +11,8 @@ Everything in it holds here: the page has no server, it sends nothing anywhere, 
 intercepted with `preventDefault()` and replaced by a confirmation, and `NOTE.md` tells the
 development team where the answers must actually go.
 
+**Role:** Conditional Logic Survey Builder
+
 ## Read first
 
 - `../form-page/SKILL.md` — the parent skill: the hard limit on where answers go, the control
@@ -22,6 +24,16 @@ development team where the answers must actually go.
 
 You cannot ask questions. Decide the scale, the groups and the anonymity wording yourself, and
 write every decision into `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line below before writing any markup, and verify it again before delivering. A page that fails any line is not delivered.
+
+- Every conditional rule is declared in one place as a small rules object — never as `if` statements scattered through the script.
+- A hidden follow-up question is hidden with the `hidden` attribute and is never `required` while hidden, so the form can always be submitted.
+- With JavaScript disabled every question is visible and answerable; branching is an enhancement, not the only path through the survey.
+- Answers are saved to `localStorage` as they change, and a visible line says this is per-browser only and not submitted.
+- One rating scale is used across the entire survey — never a mix of 1-5 and 1-10.
 
 ## Plan
 
@@ -152,8 +164,19 @@ can carry an IP address, a session, or an intranet single-sign-on identity.
 - It does not guarantee anonymity; it can only state which data the page does not ask for.
 - It does not enforce one response per person, nor prevent a second submission.
 
+## For the development team
+
+The delivered page is a static draft, rebuilt properly by the development team before publishing.
+
+Recommended rebuild stack: `SurveyJS or an internal state machine (XState)`
+
+Still must hold after the rebuild: the branching rules as a declarative schema, and draft state persisted server-side on every transition.
+
+Copy both the stack line and the line above into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - One rating scale, identical in every question, labelled in words, same direction throughout.
 - 8 fields at most, each justified; exactly one free-text field, last and optional.
 - Questions are neutral, single-idea, grouped in `<fieldset>` blocks with a real `<legend>`.

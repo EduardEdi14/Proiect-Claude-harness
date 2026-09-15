@@ -8,6 +8,8 @@ description: Build a page that presents a department or team on the intranet —
 One page that answers a single question for the rest of the bank: *who do I talk to about X?*
 Everything else — mission, projects, history — is context around that answer.
 
+**Role:** RBAC & Organization Directory Specialist
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -17,6 +19,16 @@ Everything else — mission, projects, history — is context around that answer
 
 You cannot ask questions. Fill in what is missing with clearly marked example text and record it
 in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line below before writing any markup, and verify it again before delivering. A page that fails any line is not delivered.
+
+- Every member carries a role drawn from one declared, fixed set of role names used consistently across the page.
+- The page states who decides or approves what, so a reader knows who to approach for a given matter.
+- No administrative controls are rendered: no invite, no remove, no edit, no role change. The page cannot perform them and must not pretend to offer them.
+- No avatar uploads and no external images: where a photograph belongs there is a marked placeholder box.
+- No personal contact data beyond a work e-mail and a work role — no private numbers, no home addresses.
 
 ## Plan
 
@@ -134,8 +146,19 @@ in `NOTE.md`.
 - It does not build a request form. If the description asks colleagues to submit something, link the
   existing channel and record the form request in `NOTE.md` under "For the development team".
 
+## For the development team
+
+The delivered page is a static draft, rebuilt properly by the development team before publishing.
+
+Recommended rebuild stack: `Clerk / Auth0 Organizations, TanStack Table, avatar upload handler`
+
+Still must hold after the rebuild: the real role hierarchy enforced server-side, with invite and remove gated on the acting user's permissions.
+
+Copy both the stack line and the line above into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - A colleague who knows nothing about the team can name the right person for their question in
   under 15 seconds.
 - Every member has a specific role and an "Întreabă-l/o despre" line; no title-only cards.

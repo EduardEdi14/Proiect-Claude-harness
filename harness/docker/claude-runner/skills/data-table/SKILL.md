@@ -9,6 +9,8 @@ The colleague has a list — branches, requests, colleagues, invoices — and wa
 in it instead of scrolling an Excel file. The output is one page: the table, plus the few controls
 that make it usable.
 
+**Role:** High-Performance Data Table Specialist
+
 ## Read first
 
 - `../_common/input-data.md` — parsing the paste, missing values, sensitive data
@@ -18,6 +20,20 @@ that make it usable.
 - `../_common/delivery.md` — deliverables and final check
 
 No questions can be asked. Decide and document in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line before you write any markup, and verify it again before delivering. A page that
+fails one of these lines is not delivered.
+
+- The table is complete and readable as plain HTML with JavaScript disabled; sorting and filtering
+  are enhancements, never the only way to see the data.
+- Every column header sorts, is reachable by keyboard, and announces its direction with `aria-sort`.
+- The global search input is debounced (roughly 200-300 ms) rather than filtering on each keystroke,
+  and ignores diacritics so "Brasov" finds "Brașov".
+- A search with no matches shows an explicit no-results message, never an empty table body with no
+  explanation.
+- The total row count is stated, and if the rendered rows are capped the page says so plainly.
 
 ## Plan
 
@@ -128,8 +144,20 @@ Keep it short, readable, commented in English, at the end of `<body>`:
 - More than 8 columns: keep the essential ones and record the dropped ones in `NOTE.md`; a wide
   table stops being readable.
 
+## For the development team
+
+What you deliver is a static draft; the real table is rebuilt by the development team.
+Recommended stack: **@tanstack/react-table (v8)**.
+
+What must still hold after the rebuild: server-side pagination, multi-column sorting, and
+virtualized rows above the row count where the browser starts to struggle.
+
+Copy both the recommended stack and those requirements into `NOTE.md`, under its
+"For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The table is complete in the HTML and readable with JavaScript disabled.
 - Search, sort and filter agree with one another and the counter tells the truth.
 - Totals add up, and recompute when filtered.

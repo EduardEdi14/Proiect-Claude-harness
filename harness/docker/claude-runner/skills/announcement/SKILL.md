@@ -9,6 +9,8 @@ One page that says something is changing. A specialisation of `info-page` for ch
 reader's first question is always **"mă afectează și până când trebuie să fac ceva?"**, and the
 page answers both above the first section.
 
+**Role:** Changelog & Banner Architect
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone, Romanian date format
@@ -18,6 +20,19 @@ page answers both above the first section.
 
 You cannot ask questions. If the description does not say who is affected or from when, choose the
 widest honest reading, say so on the page, and record it in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check these before you write any markup and again before you deliver; a page that fails one line
+is not delivered.
+
+- The announcement declares exactly one priority: `info`, `warning` or `critical`, carried as a
+  class on the banner (e.g. `callout callout--critical`) **and** as a visible text label.
+- Priority is never conveyed by colour alone — the label plus an icon or symbol must carry it too.
+- The effective date is stated in full, and appears both in the header and in the callout.
+- If a dismiss control is included, it remembers the choice only in `localStorage`, and a visible
+  line says this is per-browser, not per-user.
+- The page never claims the announcement was delivered, e-mailed or acknowledged by anyone.
 
 ## Plan
 
@@ -143,8 +158,23 @@ widest honest reading, say so on the page, and record it in `NOTE.md`.
 - It does not collect acknowledgements, confirmations or signatures that the employee read the change; a confirmation flow is the `form-page` template.
 - It does not reproduce the full policy or procedure document — it summarises the change and points to the official document.
 
+## For the development team
+
+The delivered page is a static draft, with no server, no delivery and no per-user state.
+
+Recommended rebuild stack: `Sonner / Radix UI Dialog, LocalStorage / Supabase (for "read/dismissed"
+state tracking)`.
+
+What must still hold after the rebuild: per-user read/dismissed state must be stored server-side,
+not in the browser; and the three priority levels — `info`, `warning`, `critical` — must survive
+the rebuild, each still labelled in text and not only in colour.
+
+Copy both the stack and these constraints into `NOTE.md`, under its "For the development team"
+heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Title, `.period` badge and callout together answer "ce se schimbă, pe cine afectează, până când".
 - The before/after table has one row per real difference, with the new value emphasised.
 - "Ce trebuie să faci tu" is numbered and every step carries a date.

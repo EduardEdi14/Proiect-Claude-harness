@@ -9,6 +9,8 @@ A colleague has to present something in fifteen minutes. The output is one HTML 
 full screen, moves with the arrow keys, and prints to PDF one slide per page — no PowerPoint, no
 external library.
 
+**Role:** Presentation Deck Architect
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -18,6 +20,16 @@ external library.
 - `../_common/delivery.md` — deliverables and final check
 
 You cannot ask questions. Build the whole deck and record the structure in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line below before writing any markup, and verify it again before delivering. A page that fails any line is not delivered.
+
+- Keyboard navigation works: `ArrowRight` and `Space` advance, `ArrowLeft` goes back, `Home` and `End` jump to the first and last slide.
+- A slide counter shows the current position in the deck.
+- Every slide carries speaker notes, hidden on screen and revealed in print, so the presenter can read from paper.
+- A `@media print` block yields exactly one slide per printed page, nothing clipped — this is the PDF export path.
+- With JavaScript disabled the slides stack as readable sections and still print one per page.
 
 ## Plan
 
@@ -115,8 +127,19 @@ keys and the position counter:
 - **No animation, no transitions, no build-up bullets.** They break printing and add nothing.
 - Charts get `<title>`/`<desc>` like anywhere else; a deck is not an excuse to drop accessibility.
 
+## For the development team
+
+The delivered page is a static draft, rebuilt properly by the development team before publishing.
+
+Recommended rebuild stack: `Reveal.js or Spectacle, Fullscreen API support`
+
+Still must hold after the rebuild: the same keyboard navigation and presenter notes, plus fullscreen and a real image export.
+
+Copy both the stack line and the line above into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The slide titles, read one after another, tell the whole story.
 - No slide holds two ideas, and none is a wall of text.
 - Arrow keys and printing both work; printing gives one slide per page in landscape.

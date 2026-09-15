@@ -11,6 +11,8 @@ follows. Everything in it holds here: the page has no server, it sends nothing a
 is intercepted with `preventDefault()` and replaced by a confirmation, and `NOTE.md` tells the
 development team where the answers must actually go.
 
+**Role:** CSAT & Sentiment Pipeline Builder
+
 ## Read first
 
 - `../form-page/SKILL.md` — the parent skill: the hard limit on where answers go, the control
@@ -22,6 +24,20 @@ development team where the answers must actually go.
 
 You cannot ask questions. Choose the criteria and the wording yourself, and write every decision
 into `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line before you write any markup, and verify it again before delivering. A page that
+fails one of these lines is not delivered.
+
+- A category control with a fixed, declared set of values is present and required, so every
+  submission arrives taggable.
+- One rating scale is used for every rated question — never a mix of 1-5 and 1-10 on the same page.
+- Free-text answers are preserved in `localStorage` as they are typed, and a visible line says this
+  is per-browser only and not yet saved anywhere.
+- No field that asks for criticism is `required`; a colleague can submit without naming a fault.
+- Identification is optional and clearly marked so, and the page never implies the feedback is
+  anonymous when a name field is filled in.
 
 ## Plan
 
@@ -159,8 +175,20 @@ Both halves are needed and neither replaces the other.
 - It does not verify that the respondent attended the session, and does not prevent a second submission.
 - It does not feed an HR record, a trainer evaluation or any performance process.
 
+## For the development team
+
+What you deliver is a static draft; the real feedback page is rebuilt by the development team.
+Recommended stack: **Star/NPS rating components, Formbricks / API webhooks**.
+
+What must still hold after the rebuild: server-side draft persistence per user, and automatic
+category tagging in the pipeline.
+
+Copy both the recommended stack and those requirements into `NOTE.md`, under its
+"For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The session name and date are in the `<h1>` and the line under it.
 - 2-4 fixed rating criteria on one word-labelled 1-5 scale, plus the two free-text questions.
 - The identity field is last, optional, and says why it exists; no criticism field is `required`.

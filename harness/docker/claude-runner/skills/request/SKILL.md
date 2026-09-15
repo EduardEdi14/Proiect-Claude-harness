@@ -10,6 +10,8 @@ work from another team. A specialisation of `form-page`: the same hard limit app
 nothing is sent or stored**), and on top of it this template always asks the same four things —
 what, why, who approves, and by when.
 
+**Role:** Ticket Pipeline & Rate-Limiting Handler
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -23,6 +25,16 @@ replace any of it.
 
 You cannot ask questions. Choose the fields, build the whole form, and write your choices —
 including the approval route you could not implement — into `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line below before writing any markup, and verify it again before delivering. A page that fails any line is not delivered.
+
+- The submit button is disabled immediately after a valid submit, so one click cannot produce two requests.
+- Nothing on the page claims the request was sent, received, assigned or given a ticket number — none of that has happened.
+- The confirmation states plainly that the request is not yet registered, and says who will pick it up once the development team connects the form.
+- Validation is driven by a single declarative schema object, so the field rules and the messages cannot disagree.
+- `NOTE.md` names the rate-limit policy and the internal channel that must be alerted on submission.
 
 ## Plan
 
@@ -171,8 +183,19 @@ including the approval route you could not implement — into `NOTE.md`.
 - It does not notify or authenticate the approver: it records the name typed by the requester, it cannot verify that the person exists or has the right to approve.
 - It does not track status, produce a request number or show a history of past requests; all of that needs the back end the development team connects.
 
+## For the development team
+
+The delivered page is a static draft, rebuilt properly by the development team before publishing.
+
+Recommended rebuild stack: `Upstash Ratelimit, Zod, Nodemailer / Slack Webhooks`
+
+Still must hold after the rebuild: sliding-window rate limiting per IP and per user, and an automated alert to the internal channel on each submission.
+
+Copy both the stack line and the line above into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The title names what is being requested, and the form has at most 8 fields.
 - The "what" is a closed list with details, and the justification asks for a business reason.
 - Department, approver and needed-by date are required, the date is a real `date` input with `min`.

@@ -2,12 +2,13 @@
 name: faq
 description: Build a frequently-asked-questions page on one subject — questions grouped by theme, each collapsible, most-asked first, plus a contact for what is not covered. Use for "întrebări frecvente", "FAQ", "ne întreabă mereu aceleași lucruri", "listă de întrebări și răspunsuri", "pagină cu răspunsuri pentru colegi".
 ---
-
 # FAQ page
 
 One subject, the questions colleagues actually ask about it, each with a short answer. The reader
 arrives with one specific question and leaves as soon as it is answered — the page is built for
 scanning, not for reading.
+
+**Role:** Structured SEO & Accordion Architect
 
 ## Read first
 
@@ -18,6 +19,21 @@ scanning, not for reading.
 
 You cannot ask questions. Fill in what is missing with clearly marked example text and record it
 in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line before you write any markup, and verify it again before delivering. A page that
+fails one of these lines is not delivered.
+
+- The page includes a `<script type="application/ld+json">` block describing a `FAQPage`, with every
+  question and answer it contains.
+- The structured data and the visible content match exactly — same questions, same answers, same
+  wording. No question appears in one and not the other.
+- Every question is a real `<details>`/`<summary>` entry, readable and answerable with JavaScript
+  disabled.
+- The filter input ignores diacritics and case, and shows an explicit no-results message when
+  nothing matches.
+- Questions are phrased the way a colleague would ask them, not as topic labels.
 
 ## Plan
 
@@ -122,13 +138,26 @@ in `NOTE.md`.
 
 - It is not the policy or the procedure. It answers questions about one and links to it in words;
   it never restates the full regulation or replaces the official document.
-- It has no search box, no tagging and no "was this helpful" voting. If the description asks for
-  them, build the static page and record the request in `NOTE.md` under "For the development team".
+- Its filter is a convenience over the questions already on the page, not a search engine: no
+  indexing, no ranking, no fuzzy matching, nothing found outside this page. Tagging and "was this
+  helpful" voting need a backend — record those in `NOTE.md` under "For the development team".
 - It does not answer questions about an individual's own case — no CNP, account or card numbers, no
   salary, medical or absence data, and no per-person exceptions, even if the description supplies them.
 
+## For the development team
+
+What you deliver is a static draft; the real FAQ page is rebuilt by the development team.
+Recommended stack: **Radix UI Accordion, Schema.org FAQPage JSON-LD injector**.
+
+What must still hold after the rebuild: keep the JSON-LD in sync with the content automatically, and
+upgrade the substring filter to real fuzzy matching.
+
+Copy both the recommended stack and those requirements into `NOTE.md`, under its
+"For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Every `<summary>` is a real question in a colleague's own words, with a question mark.
 - Questions are grouped by theme and the most-asked one in each group is first.
 - Every answer stands alone in two to four sentences; nothing points to another entry.

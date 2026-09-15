@@ -9,6 +9,8 @@ The benefits a colleague has, one block each, every block answering the same thr
 same order. The value of the page is the repetition: the reader learns the shape once and then
 compares benefits by scanning the same three positions.
 
+**Role:** Feature-Matrix Specialist
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -18,6 +20,21 @@ compares benefits by scanning the same three positions.
 
 You cannot ask questions. Fill in what is missing with clearly marked example text and record it
 in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check these before you write any markup and again before you deliver; a page that fails one line
+is not delivered.
+
+- Every benefit block repeats the identical headings in the identical order — no benefit invents
+  its own structure.
+- No benefit-specific prose lives outside those headings, so the blocks stay comparable.
+- `NOTE.md` carries the full benefit set as a JSON array — one object per benefit, the same keys
+  throughout — ready to drop into a config file.
+- The JSON in `NOTE.md` and the rendered page agree exactly: same benefits, same order, same
+  wording.
+- Eligibility is stated for every benefit; no benefit is left implying it applies to everyone when
+  it does not.
 
 ## Plan
 
@@ -143,8 +160,22 @@ in `NOTE.md`.
 - It does not enrol anyone. There is no form and no platform connection; the page points to the
   existing channel and the request goes into `NOTE.md` under "For the development team".
 
+## For the development team
+
+The delivered page is a static draft, with no platform connection and no enrolment.
+
+Recommended rebuild stack: `Lucide-react, Tailwind Grid, Framer Motion (subtle fade-in
+transitions)`.
+
+What must still hold after the rebuild: benefit data lives in a JSON/TS config file, never inline
+in components; and the JSON block in `NOTE.md` is the handover format the rebuild starts from.
+
+Copy both the stack and these constraints into `NOTE.md`, under its "For the development team"
+heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Every benefit block has exactly the three headings, in the same order, with all three filled or
   explicitly marked "De confirmat cu HR".
 - Eligibility names the contract type and the waiting period; no unearned "toți angajații".

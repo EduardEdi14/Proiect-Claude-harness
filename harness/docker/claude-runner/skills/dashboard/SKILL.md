@@ -8,6 +8,8 @@ description: Build a one-screen indicator dashboard (KPI tiles, charts, a short 
 A single screen answering "how are we doing?" — a colleague opens it, and in ten seconds knows
 whether things are fine and where to look if they are not.
 
+**Role:** Dashboard & Layout Performance Engineer
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone, Romanian number formats
@@ -18,6 +20,20 @@ whether things are fine and where to look if they are not.
 
 You run non-interactively: **you cannot ask questions**. Decide, build the whole page, and write
 every assumption into `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line before you write any markup, and verify it again before delivering. A page that
+fails one of these lines is not delivered.
+
+- Every tile and every chart stands on its own: one with missing data shows its own empty state or
+  `—` while all the others still render fully.
+- No tile depends on JavaScript to appear at all; with JavaScript disabled the whole view is still
+  readable.
+- A failure in any inline script cannot leave the view blank — nothing is built by script that was
+  not already in the markup.
+- Each tile states what it counts and over what period, so no figure is ambiguous on its own.
+- Every figure on the page appears in the data received, or is marked as example data.
 
 ## Plan
 
@@ -119,8 +135,20 @@ useful line on the page.
   version and record the request in `NOTE.md`, under "For the development team".
 - No client-level personal data (see `input-data.md`, point 7).
 
+## For the development team
+
+What you deliver is a static draft; the real dashboard is rebuilt by the development team.
+Recommended stack: **Next.js App Router (Suspense Boundaries), React-Grid-Layout, Lucide-react**.
+
+What must still hold after the rebuild: one isolated Suspense boundary per widget, so a slow widget
+never blocks first paint.
+
+Copy both the recommended stack and that requirement into `NOTE.md`, under its
+"For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The `<h1>` states a conclusion; a colleague who reads only the title and the tiles has the answer.
 - Every tile has a value, a comparison, and a unit.
 - Every chart has `<title>`, `<desc>`, a caption, and its data reachable as text.

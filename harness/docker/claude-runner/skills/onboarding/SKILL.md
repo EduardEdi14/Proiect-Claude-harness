@@ -9,6 +9,8 @@ One page a colleague reads on their first morning. A specialisation of `info-pag
 reader is new and slightly anxious: **order and tone carry the page**. A checklist they can work
 through beats three paragraphs explaining the same thing.
 
+**Role:** Interactive Tour & Activation Specialist
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -17,6 +19,20 @@ through beats three paragraphs explaining the same thing.
 
 You cannot ask questions. Where a name, tool or deadline is missing, write a clearly marked
 example and list it in `NOTE.md` for the colleague to replace.
+
+## Acceptance test (blocking)
+
+Checked before a single line of markup is written, and verified again before delivery. A page that
+fails any line below is not delivered.
+
+- The access checklist uses real `<input type="checkbox">` controls with proper labels, so a
+  colleague can work through it.
+- Ticked items are remembered in `localStorage`, and a visible line says this is per-browser and not
+  a record anyone else can see.
+- Nothing blocks reading: no modal, no overlay, no popup that must be dismissed before the page can
+  be used.
+- The page is complete and usable with JavaScript disabled — the checklist is still a readable list.
+- Each step says who is responsible, so a new colleague always knows who to ask.
 
 ## Plan
 
@@ -143,8 +159,23 @@ example and list it in `NOTE.md` for the colleague to replace.
 - It does not hold employment paperwork, contracts or any personal data of the new colleague; those stay with Resurse Umane.
 - It does not collect the reader's answers or progress: checkbox state lives only in their browser view and is never sent or stored.
 
+## For the development team
+
+The delivered page is a static draft: three files, no build step, no dependencies, nothing stored
+beyond the reader's own browser.
+
+Recommended rebuild stack: **Driver.js or Shepherd.js, Zustand (for persistent active step state)**.
+
+In the real build, per-user progress is stored server-side so it resumes across sessions and
+devices, and a completed step is never shown again. Whatever the tour library allows, the page must
+still read top to bottom without blocking popups, stay usable with JavaScript off, and name the
+person responsible for every step.
+
+Copy the stack and these constraints into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - The reader knows exactly what happens in the next hour, not just this month.
 - Sections are in chronological order and every step is numbered.
 - Every responsibility area has a name and a `mailto:`.

@@ -9,6 +9,8 @@ One event or one period, broken into time slots. The reader either follows it li
 prints it and carries it around, so the time column is the spine of the page and everything else
 hangs off it.
 
+**Role:** Time-Slot Allocation Specialist
+
 ## Read first
 
 - `../_common/libra-identity.md` — colors, typography, tone
@@ -18,6 +20,16 @@ hangs off it.
 
 You cannot ask questions. Fill in what is missing with clearly marked example text and record it
 in `NOTE.md`.
+
+## Acceptance test (blocking)
+
+Check every line below before writing any markup, and verify it again before delivering. A page that fails any line is not delivered.
+
+- No slot is presented as bookable or reserved: no "book", no "reserve", no seat state, no availability count.
+- Every slot shows its start and end time and the timezone, in a format that cannot be misread.
+- Parallel sessions are marked unmistakably, so nobody plans to attend two things at once.
+- A `@media print` block gives a clean one-page agenda, because an agenda gets printed and carried around.
+- If the description asks for booking, the agenda is built without it and the requirement is recorded in `NOTE.md`.
 
 ## Plan
 
@@ -147,8 +159,19 @@ People print an agenda and carry it, so the print result is part of the delivera
   work roles of the people leading a session, never contact details of the audience, CNP, or any
   medical or salary information.
 
+## For the development team
+
+The delivered page is a static draft, rebuilt properly by the development team before publishing.
+
+Recommended rebuild stack: `Date-fns, Cal.com API, or cron-based availability engines`
+
+Still must hold after the rebuild: atomic slot reservation so two concurrent users cannot take the same slot.
+
+Copy both the stack line and the line above into `NOTE.md`, under its "For the development team" heading.
+
 ## Done when
 
+- Every line of the acceptance test passes.
 - Every slot has a start and an end time in `HH:MM-HH:MM`, sorted, with no unexplained gaps.
 - The time zone and the full date with weekday appear on the page.
 - Parallel sessions are unmistakable from the text alone, and the legend matches the badges.
