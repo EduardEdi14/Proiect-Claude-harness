@@ -12,7 +12,7 @@
              data-skill="{{ tool.id if tool else '' }}"
              data-configurat="{% if configurat %}1{% else %}0{% endif %}"
              {% if projectID %}data-project-id="{{ projectID }}"{% endif %}
-             {% if initialHtml %}data-resume="1"{% endif %}>
+             {% if projectID %}data-resume="1"{% endif %}>
 
           {# ── Left panel: scrollable area + fixed input dock ── #}
           <div class="ab-split-left">

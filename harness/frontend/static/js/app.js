@@ -943,18 +943,39 @@
       function (c) { c.disabled = true; });
   }
 
+  var TYPING_MSGS = [
+    "Gândesc...", "Analizez cererea...", "Pregătesc răspunsul...",
+    "Construiesc pagina...", "Scriu codul HTML...", "Finalizez detaliile...",
+    "Verific structura...", "Aplic stilurile...",
+  ];
   function showTyping() {
+    if (typingStatusInterval) { clearInterval(typingStatusInterval); typingStatusInterval = null; }
     var d = document.createElement("div");
     d.className = "bubble bubble--bot typing-bubble";
     d.id = "ab-typing";
     d.innerHTML = markAvatar() +
-      '<div class="bubble-body"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+      '<div class="bubble-body">' +
+        '<span class="typing-status">' + TYPING_MSGS[0] + '</span>' +
+      '</div>';
     list.appendChild(d);
     scroll();
+    var idx = 0;
+    var statusEl = d.querySelector(".typing-status");
+    typingStatusInterval = setInterval(function() {
+      if (!statusEl) return;
+      idx = (idx + 1) % TYPING_MSGS.length;
+      statusEl.classList.add("typing-status--out");
+      setTimeout(function() {
+        if (!statusEl) return;
+        statusEl.textContent = TYPING_MSGS[idx];
+        statusEl.classList.remove("typing-status--out");
+      }, 250);
+    }, 2500);
   }
   function hideTyping() {
     var t = document.getElementById("ab-typing");
     if (t) t.remove();
+    if (typingStatusInterval) { clearInterval(typingStatusInterval); typingStatusInterval = null; }
   }
 
   function addTotal(cost) {
@@ -1278,11 +1299,12 @@
   var configurat  = container.getAttribute("data-configurat") === "1";
   var resume      = container.getAttribute("data-resume") === "1";
 
-  var currentHtml   = "";
-  var currentProjId = container.getAttribute("data-project-id") || null;
-  var firstBuild    = true;
-  var busy          = false;
-  var typingEl      = null;
+  var currentHtml      = "";
+  var currentProjId    = container.getAttribute("data-project-id") || null;
+  var firstBuild       = true;
+  var busy             = false;
+  var typingEl         = null;
+  var typingStatusInterval = null;
 
   // ── Welcome / resume init ─────────────────────────────────────────────
   function init() {
@@ -1323,6 +1345,12 @@
           currentHtml = h;
           if (placeholder) placeholder.hidden = true;
           if (iframeEl) { iframeEl.hidden = false; iframeEl.srcdoc = h; }
+        } else {
+          // No page yet — next message should build, not modify
+          firstBuild = true;
+          if (rightPanel) rightPanel.hidden = true;
+          container.classList.remove("is-split");
+          if (actionsEl) actionsEl.hidden = true;
         }
       }).catch(function() {
         addVera("Ai reluat proiectul. Spune-mi dacă vrei să schimb ceva.");
@@ -1506,9 +1534,49 @@
     var fullText = buildMessage(userText, textFiles);
 
     if (firstBuild) {
-      doBuild(fullText, displayText, imagini);
+      doChat(fullText, displayText, imagini);
     } else {
       doModifica(fullText, displayText, imagini);
+    }
+  }
+
+  // ── Chat pre-build (conversational) ──────────────────────────────────
+  var chatBrief = { skill: skill, nume: '', descriere: '' };
+
+  async function doChat(text, displayText, imagini) {
+    busy = true;
+    syncSend();
+    showTyping();
+
+    try {
+      var r = await fetch("/asistent/mesaj", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mesaj: text }),
+      });
+      removeTyping();
+      var d = await r.json();
+      if (!r.ok) {
+        addVera(esc(d.eroare || "Nu am putut procesa mesajul."));
+        return;
+      }
+
+      addVera(esc(d.raspuns || ""), d.cost);
+
+      if (d.skill && d.skill !== "nedecis") chatBrief.skill = d.skill;
+      if (d.nume)      chatBrief.nume      = d.nume;
+      if (d.descriere) chatBrief.descriere = d.descriere;
+
+      if (d.gata && d.descriere) {
+        busy = false;
+        await doBuild(d.descriere, d.descriere, imagini);
+      }
+    } catch (err) {
+      removeTyping();
+      addVera("Conexiunea a căzut. Încearcă din nou.");
+    } finally {
+      busy = false;
+      syncSend();
     }
   }
 
@@ -1545,6 +1613,7 @@
       removeTyping();
       var d = await r.json();
       if (!r.ok) {
+        if (d.proiectId) currentProjId = d.proiectId;
         addVera(esc(d.eroare || "Nu am putut construi pagina. Încearcă din nou."));
         return;
       }
