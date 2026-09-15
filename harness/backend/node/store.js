@@ -658,6 +658,13 @@ class Store {
     );
   }
 
+  async updateMeta(id, skillID, name, description) {
+    await this.pool.query(
+      `UPDATE projects SET skill_id=$2, name=$3, description=$4, updated_at=NOW() WHERE id=$1`,
+      [id, skillID, name, description]
+    );
+  }
+
   async update(id, skillID, name, description) {
     await this.pool.query(
       `UPDATE projects SET skill_id=$2, name=$3, description=$4, status='queued', updated_at=NOW()

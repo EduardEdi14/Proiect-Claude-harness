@@ -1350,16 +1350,20 @@
         var h        = results[0];
         var messages = results[1] || [];
 
+        // Mesajul de bun venit apare intotdeauna primul, indiferent daca e resume sau nu
+        if (!h) {
+          // Conversatie in desfasurare (pagina inca nu e generata)
+          addVera("Bună! Sunt Vera, asistentul tău Libra Maker. Spune-mi ce pagină vrei să construiesc — câteva rânduri sunt suficiente — și o ai gata în câteva clipe.");
+        } else if (!messages.length) {
+          // Pagina exista dar nu avem istoric salvat
+          addVera("Ai reluat proiectul. Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva.");
+        }
+
         // Render chat history
         messages.forEach(function(m) {
           if (m.role === "user") addUser(m.text || "");
-          else addVera(esc(m.text || ""), m.cost, m.durata);
+          else addVera(formatVeraText(m.text || ""), m.cost, m.durata);
         });
-
-        // Fallback message if no history saved
-        if (!messages.length) {
-          addVera("Ai reluat proiectul. Pagina ta e vizibilă în dreapta. Spune-mi dacă vrei să schimb ceva.");
-        }
 
         // Show saved page in iframe
         if (h) {
@@ -1379,6 +1383,11 @@
       input.focus();
       return;
     }
+
+    // Afisam zona de mesaje imediat ca mesajul de bun venit sa fie vizibil
+    // inainte ca utilizatorul sa trimita ceva (nu la primul doSend)
+    var messagesWrapInit = document.getElementById("cs-messages-wrap");
+    if (messagesWrapInit) messagesWrapInit.hidden = false;
 
     if (!configurat) {
       addVera(
@@ -1544,14 +1553,12 @@
     // Build full message: attached files + user text
     var fullText = buildMessage(userText);
 
-    // On first send: show chat area, hide gallery and template dropdown
+    // On first send: hide gallery and template dropdown (messages area already visible)
     if (firstBuild) {
-      var messagesWrap = document.getElementById("cs-messages-wrap");
-      var gallery      = document.getElementById("ab-gallery");
-      var tplSection   = document.getElementById("tpl-section");
-      if (messagesWrap) messagesWrap.hidden = false;
-      if (gallery)      gallery.hidden      = true;
-      if (tplSection)   tplSection.hidden   = true;
+      var gallery    = document.getElementById("ab-gallery");
+      var tplSection = document.getElementById("tpl-section");
+      if (gallery)    gallery.hidden    = true;
+      if (tplSection) tplSection.hidden = true;
     }
 
     // Imaginile merg separat la API; fișierele text merg în prompt
@@ -1593,10 +1600,19 @@
     showTyping();
 
     try {
+      var imgPayload = (imagini || []).map(function(img) {
+        return { data: img.data, mediaType: img.mediaType };
+      });
       var r = await fetch("/asistent/mesaj", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mesaj: text }),
+        body: JSON.stringify({
+          mesaj:       text,
+          display_text: displayText || text,
+          skill:       chatBrief.skill || skill,
+          proiect_id:  currentProjId || null,
+          imagini:     imgPayload,
+        }),
       });
       removeTyping();
       var d = await r.json();
@@ -1605,7 +1621,14 @@
         return;
       }
 
-      addVera(esc(d.raspuns || ""), d.cost);
+      // Proiectul e creat la primul mesaj — retinem ID-ul si actualizam URL-ul
+      // ca la refresh pagina sa se redeschida pe /proiect/:id/detalii si sa arate istoricul
+      if (d.proiectId && !currentProjId) {
+        currentProjId = d.proiectId;
+        history.replaceState(null, "", "/proiect/" + currentProjId + "/detalii");
+      }
+
+      addVera(formatVeraText(d.raspuns || ""), d.cost);
 
       if (d.skill && d.skill !== "nedecis") chatBrief.skill = d.skill;
       if (d.nume)      chatBrief.nume      = d.nume;
@@ -1613,7 +1636,8 @@
 
       if (d.gata && d.descriere) {
         busy = false;
-        await doBuild(d.descriere, d.descriere, imagini);
+        // Imaginile sunt deja acumulate server-side; nu le retrimitem
+        await doBuild(d.descriere, d.descriere, []);
       }
     } catch (err) {
       removeTyping();
@@ -1652,7 +1676,7 @@
       var r = await fetch("/asistent/construieste", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nume: name, descriere: text, display_text: displayText, skill: skill, imagini: imgPayload }),
+        body: JSON.stringify({ nume: name, descriere: text, display_text: displayText, skill: skill, imagini: imgPayload, proiect_id: currentProjId || null }),
       });
       removeTyping();
       var d = await r.json();
@@ -1763,12 +1787,30 @@
       '</div>';
   }
 
+  // Formatare text Vera: bold pe liniile-titlu (fara punct, fara bullet),
+  // bullets mai curate, newline → <br>
+  function formatVeraText(text) {
+    return esc(text)
+      .split("\n")
+      .map(function(linie) {
+        var t = linie.trim();
+        // Linie-titlu: nu incepe cu •, -, nu e goala, nu contine ? si e scurta (<50 ch)
+        if (t && t.length < 50 && !t.startsWith("•") && !t.startsWith("-") &&
+            !t.includes("?") && !/^[a-z]/.test(t)) {
+          return "<strong>" + t + "</strong>";
+        }
+        return linie;
+      })
+      .join("<br>");
+  }
+
   function addVera(html, cost, durata) {
     var d = document.createElement("div");
     d.className = "bubble bubble--bot";
+    var content = (html || "").replace(/\n/g, "<br>");
     d.innerHTML =
       "<div class='bubble-avatar'>" + veraAvatar() + "</div>" +
-      "<div class='bubble-body'>" + html + formatStats(cost, durata) + "</div>";
+      "<div class='bubble-body'>" + content + formatStats(cost, durata) + "</div>";
     list.appendChild(d);
     scrollDown();
   }

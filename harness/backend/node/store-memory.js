@@ -132,6 +132,15 @@ class MemoryStore {
     p.updatedAt   = new Date();
   }
 
+  async updateMeta(id, skillID, name, description) {
+    const p = this._projects.get(id);
+    if (!p) return;
+    if (skillID)     p.skillID     = skillID;
+    if (name)        p.name        = name;
+    if (description) p.description = description;
+    p.updatedAt = new Date();
+  }
+
   async update(id, skillID, name, description) {
     const p = this._projects.get(id);
     if (!p) return;

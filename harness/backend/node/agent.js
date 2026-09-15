@@ -169,11 +169,22 @@ ${cunostinte.catalogText()}`,
   '',
   persona.STRATEGIE,
   '',
-  `CAND TE OPRESTI DIN INTREBAT
-Pui "gata": true doar dupa ce ai reformulat si colegul a confirmat. Atunci
-completezi si "nume" (scurt, cum il recunoaste echipa) si "descriere" (tot ce
-trebuie sa contina pagina, adunat din toata discutia, nu doar din ultimul mesaj).
-Pana atunci "gata" ramane false, iar "nume" si "descriere" raman goale.`,
+  `CAND POTI PUNE "gata": true
+Fluxul are trei etape stricte:
+
+1. CLARIFICARE — un singur mesaj cu toate intrebarile grupate pe categorii.
+   "gata": false, "nume": "", "descriere": "".
+
+2. SUMAR SI CONFIRMARE — dupa ce primesti raspunsurile, rezumi ce ai inteles
+   ("Am inteles ca vrei: [rezumat]. Pot sa incep?") si astepti confirmarea.
+   "gata": false, "nume": "", "descriere": "".
+
+3. GENERARE — abia dupa ce colegul confirma explicit ("da", "construieste" etc.)
+   pui "gata": true, "nume" (scurt, cum il recunoaste echipa) si "descriere"
+   (tot ce trebuie sa contina pagina, adunat din toata discutia).
+
+NICIODATA "gata": true fara confirmare explicita. Nicio linie de cod nu se
+genereaza pana la acest pas.`,
   '',
   persona.EXEMPLE,
 ].join('\n');
@@ -197,8 +208,28 @@ const SCHEMA_CONVERSATIE = {
 };
 
 /**
+ * Construieste un bloc de content multimodal pentru API (imagini + text).
+ * Folosit cand utilizatorul ataseaza imagini intr-un mesaj de chat.
+ *
+ * @param {string} text
+ * @param {Array<{data: string, mediaType: string}>} imagini
+ * @returns {Array} content array pentru Anthropic API
+ */
+function construiesteContentMultimodal(text, imagini) {
+  const blocks = imagini.map(img => ({
+    type: 'image',
+    source: { type: 'base64', media_type: img.mediaType, data: img.data },
+  }));
+  if (text) blocks.push({ type: 'text', text });
+  return blocks;
+}
+
+/**
  * Un pas de conversatie.
- * @param {Array<{role: string, content: string}>} istoric
+ * Istoricul poate contine mesaje cu content text (string) sau multimodal (array),
+ * daca utilizatorul a atasat imagini in mesajul respectiv.
+ *
+ * @param {Array<{role: string, content: string|Array}>} istoric
  */
 async function raspunde(istoric) {
   const r = await getClient().messages.create({
@@ -371,6 +402,7 @@ async function modifica(mesaj, htmlCurent, imagini) {
 
 module.exports = {
   isConfigured, lipsuri, raspunde, construieste, modifica, calculeazaCost,
+  construiesteContentMultimodal,
   salveazaPagina, citestePagina, salveazaChat, citesteChat,
   DEPLOYMENT, NUME: persona.NUME,
 };
