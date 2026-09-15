@@ -1,6 +1,27 @@
 // JS propriu al aplicatiei Libra Maker. Fara build sau bundler.
+// 0. Reincarcarea listelor la navigarea inapoi.
 // 1. Contorul de caractere (ecranele cu textarea+maxlength).
 // 2. Agent Builder - logica conversatiei din ecranul "Detalii ghidate".
+
+/* ============================================================
+   0. Navigarea inapoi pe paginile cu liste
+
+   La "inapoi" browserul poate reda pagina din memorie (bfcache), fara nicio
+   cerere catre server. Pagina revine exact cum a fost lasata, deci un proiect
+   predat intre timp lipseste din lista pana la un reload manual.
+
+   Reincarcam doar paginile care arata o lista de proiecte. Ecranul de
+   construire tine conversatia in DOM, iar un reload acolo ar sterge-o.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  if (!document.getElementById("project-list")) return;
+
+  window.addEventListener("pageshow", function (evt) {
+    if (evt.persisted) window.location.reload();
+  });
+})();
 
 /* ============================================================
    1. Contor de caractere
@@ -528,8 +549,7 @@
     "handoff-btn-projects": "See request", "handoff-btn-new": "New project",
     "no-bypass-title": "No bypass possible",
     "no-bypass-1": "There is no publish button for business users — the only way out of Libra Maker is a request to Dev.",
-    "no-bypass-2": "There is no “advanced” mode, terminal or free prompt. The two skills are all that can run.",
-    "no-bypass-3": "Every session stays in the log: who, which skill, which fields, which code.",
+    "no-bypass-2": "There is no “advanced” mode, terminal or free prompt.",
   };
 
   // Șabloanele din meniul de pe ecranul de construire vin din store.js, deci nu
@@ -583,7 +603,6 @@
       tpl: "Guide about [subject] for [audience]: [section 1 - description], [section 2 - description], [section 3 - description] and [contact or further resources]." },
   };
 
-  var savedRO = {}, savedROPH = {};
 
   // Relative time ("acum 3 zile"): the server sends unit + count as data
   // attributes so it can be worded in either language.
@@ -600,8 +619,59 @@
     return null;
   }
 
+  // Linia de sub numele proiectului: "în lucru", "salvat acum 3 min." sau o
+  // data scurta. Oglindeste Project.meta() din store.js.
+  var MONTHS_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  function agoPhraseEN(ms) {
+    if (ms < 60000)   return "a few seconds ago";
+    if (ms < 120000)  return "a minute ago";
+    if (ms < 3600000) return Math.floor(ms / 60000) + " min ago";
+    if (ms < 7200000) return "an hour ago";
+    return Math.floor(ms / 3600000) + " hours ago";
+  }
+
+  function metaTextEN(status, iso) {
+    if (status === "queued" || status === "running") return "in progress";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    if (status === "draft") {
+      var diff = Date.now() - d.getTime();
+      if (diff < 86400000) return "saved " + agoPhraseEN(diff);
+    }
+    return d.getDate() + " " + MONTHS_EN[d.getMonth()];
+  }
+
+  // Fraza din hero. Serverul o trimite gata scrisa, in una din trei forme
+  // (niciunul / unul / N), deci o rescriem dupa forma pe care o recunoastem.
+  // Numarul il luam din fraza: nu depinde de un camp separat din store.
+  var RECENT_RO = [
+    [/^\s*Niciun\s+proiect/i,      function ()  { return "No projects in the last two weeks."; }],
+    [/^\s*Ai\s+un\s+proiect/i,     function ()  { return "You have one project in the last two weeks."; }],
+    [/^\s*Ai\s+(\d+)\s+proiecte/i, function (m) { return "You have " + m[1] + " projects in the last two weeks."; }],
+  ];
+
+  function recentTextEN(ro) {
+    for (var i = 0; i < RECENT_RO.length; i++) {
+      var m = ro.match(RECENT_RO[i][0]);
+      if (m) return RECENT_RO[i][1](m);
+    }
+    return null;
+  }
+
   function applyLang(lang) {
     var en = lang === "en";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-recent-phrase]"), function (el) {
+      if (en) {
+        // Forma nerecunoscuta rămâne în română: mai bine netradusă decât greșită.
+        var t = recentTextEN(el.getAttribute("data-recent-ro") || el.textContent);
+        if (t === null) return;
+        if (!el.hasAttribute("data-recent-ro")) el.setAttribute("data-recent-ro", el.textContent);
+        el.textContent = t;
+      } else if (el.hasAttribute("data-recent-ro")) {
+        el.textContent = el.getAttribute("data-recent-ro");
+      }
+    });
     Array.prototype.forEach.call(document.querySelectorAll("[data-ago-unit]"), function (el) {
       if (en) {
         if (!el.hasAttribute("data-ago-ro")) el.setAttribute("data-ago-ro", el.textContent);
@@ -612,22 +682,35 @@
         el.textContent = el.getAttribute("data-ago-ro");
       }
     });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-meta-status]"), function (el) {
+      if (en) {
+        var t = metaTextEN(el.getAttribute("data-meta-status"), el.getAttribute("data-meta-iso"));
+        if (t === null) return;
+        if (!el.hasAttribute("data-meta-ro")) el.setAttribute("data-meta-ro", el.textContent);
+        el.textContent = t;
+      } else if (el.hasAttribute("data-meta-ro")) {
+        el.textContent = el.getAttribute("data-meta-ro");
+      }
+    });
+    // Originalul se ține pe element, nu într-o hartă după cheie: aceeași cheie
+    // apare pe texte românești diferite (numele unui instrument e și eticheta
+    // unui card), iar o hartă comună le-ar amesteca la revenirea pe română.
     Array.prototype.forEach.call(document.querySelectorAll("[data-i18n]"), function (el) {
       var key = el.getAttribute("data-i18n");
       if (en) {
-        if (!Object.prototype.hasOwnProperty.call(savedRO, key)) savedRO[key] = el.innerHTML;
+        if (!el.hasAttribute("data-i18n-ro")) el.setAttribute("data-i18n-ro", el.innerHTML);
         if (DICT_EN[key] !== undefined) el.innerHTML = DICT_EN[key];
-      } else {
-        if (Object.prototype.hasOwnProperty.call(savedRO, key)) el.innerHTML = savedRO[key];
+      } else if (el.hasAttribute("data-i18n-ro")) {
+        el.innerHTML = el.getAttribute("data-i18n-ro");
       }
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-i18n-ph]"), function (el) {
       var key = el.getAttribute("data-i18n-ph");
       if (en) {
-        if (!Object.prototype.hasOwnProperty.call(savedROPH, key)) savedROPH[key] = el.getAttribute("placeholder") || "";
+        if (!el.hasAttribute("data-i18n-ph-ro")) el.setAttribute("data-i18n-ph-ro", el.getAttribute("placeholder") || "");
         if (DICT_EN[key] !== undefined) el.setAttribute("placeholder", DICT_EN[key]);
-      } else {
-        if (Object.prototype.hasOwnProperty.call(savedROPH, key)) el.setAttribute("placeholder", savedROPH[key]);
+      } else if (el.hasAttribute("data-i18n-ph-ro")) {
+        el.setAttribute("placeholder", el.getAttribute("data-i18n-ph-ro"));
       }
     });
     // Meniul de șabloane: numele din listă plus textul care ajunge în casetă.
@@ -683,6 +766,12 @@
 
   Array.prototype.forEach.call(langBtns, function (btn) {
     btn.addEventListener("click", function () { setLang(btn.getAttribute("data-lang-set")); });
+  });
+
+  // Căutarea înlocuiește lista de proiecte prin HTMX. Fragmentul nou vine de la
+  // server în română, deci retraducem după fiecare înlocuire.
+  document.body.addEventListener("htmx:afterSwap", function () {
+    if (lang === "en") applyLang("en");
   });
 
   if (lang === "en") applyLang("en");
