@@ -44,16 +44,30 @@ app.use('/static', express.static(path.join(__dirname, '../../frontend/static'))
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: '30mb' }));
 
-app.use(session({
-  store: process.env.DATABASE_URL ? new pgSession({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-  }) : undefined,
+// Sesiunile ajung in Postgres doar daca baza de date chiar raspunde. Store-ul de
+// date are deja fallback pe memorie (vezi start()); daca sesiunile ar ramane
+// legate de un Postgres oprit, serverul ar porni "cu succes" si apoi ar da 500
+// la fiecare cerere care atinge sesiunea. Middleware-ul real se alege in start(),
+// de aceea aici doar delegam.
+const SESSION_OPTIONS = {
   secret:            process.env.SESSION_SECRET || 'libra-maker-dev-secret-2025',
   resave:            false,
   saveUninitialized: false,
   cookie:            { httpOnly: true, sameSite: 'lax' },
-}));
+};
+
+let sessionMiddleware = session(SESSION_OPTIONS);
+
+function useDatabaseSessions() {
+  sessionMiddleware = session(Object.assign({}, SESSION_OPTIONS, {
+    store: new pgSession({
+      conString:            process.env.DATABASE_URL,
+      createTableIfMissing: true,
+    }),
+  }));
+}
+
+app.use((req, res, next) => sessionMiddleware(req, res, next));
 
 // ---------- helpers ----------
 
@@ -745,9 +759,11 @@ async function start() {
     try {
       store = new Store();
       await store.init();
+      useDatabaseSessions();
       console.log('[store] PostgreSQL conectat, tabele verificate ✓');
     } catch (err) {
       console.warn(`[store] PostgreSQL indisponibil (${err.message}) — pornesc cu store in memorie (date demo).`);
+      console.warn('[sesiuni] si sesiunile ramin in memorie — se pierd la repornire.');
       store = new MemoryStore();
       await store.init();
     }
