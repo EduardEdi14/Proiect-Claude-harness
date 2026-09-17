@@ -41,6 +41,7 @@
       <div class="btn-row">
         <button class="btn btn--primary btn--lg" type="button"
                 hx-post="/proiect/{{ project.id }}/handoff" hx-swap="none" data-i18n="result-send">Trimite la echipa Dev</button>
+                <a class="btn btn--ghost btn--lg" href="/proiect/{{ project.id }}/descarca" download>Descarcă fișierele</a>
         <a class="btn btn--ghost btn--lg" href="/proiect/{{ project.id }}/detalii" data-i18n="result-edit">Mai schimb ceva</a>
         <a class="btn btn--link" href="/acasa" data-i18n="result-home">↩ Acasă</a>
       </div>

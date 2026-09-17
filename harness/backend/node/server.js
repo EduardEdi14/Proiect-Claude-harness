@@ -17,6 +17,7 @@ const nunjucks = require('nunjucks');
 const { STATUS, TOOLS, TEMPLATES, toolByID, Store } = require('./store');
 const { MemoryStore }                     = require('./store-memory');
 const agent                               = require('./agent');
+const pachet                              = require('./pachet');
 
 // Multer: fisiere in memorie, max 10 MB
 const upload = multer({
@@ -436,6 +437,34 @@ app.get('/proiect/:id/status', auth(async (req, res) => {
 // Pastram adresa veche ca redirect, ca sa nu rupem linkurile deja trimise.
 app.get('/asistent', auth((req, res) => res.redirect('/proiect-nou/detalii')));
 
+/**
+ * Traduce o eroare venita de la model intr-un raspuns pe care il poate citi
+ * un coleg din business. Cauza tehnica pleaca in log, nu in interfata.
+ *
+ * Distingem doua situatii, pentru ca actiunea e diferita: o cheie respinsa
+ * inseamna ca nu are rost sa reincerce (trebuie sa intervina administratorul),
+ * iar o eroare trecatoare inseamna ca merita sa mai incerce o data.
+ */
+function eroareAsistent(err, res, unde) {
+  const cod = err && err.status;
+  console.error(`[asistent] ${unde} a esuat (status ${cod || '-'}):`, err && err.message);
+
+  if (cod === 401 || cod === 403) {
+    console.error('[asistent] cheia sau endpoint-ul nu mai sunt acceptate - verifica CLAUDE_DATA_API_KEY si CLAUDE_DATA_URL.');
+    return res.status(503).json({
+      eroare: 'Asistentul nu e disponibil momentan. Dacă situația persistă, anunță echipa tehnică.',
+    });
+  }
+  if (cod === 429) {
+    return res.status(429).json({
+      eroare: 'Asistentul e foarte solicitat acum. Mai încearcă peste un minut.',
+    });
+  }
+  return res.status(502).json({
+    eroare: 'Ceva n-a mers de partea noastră. Mai încearcă o dată.',
+  });
+}
+
 // POST /asistent/mesaj — un pas de conversatie
 app.post('/asistent/mesaj', auth(async (req, res, next) => {
   if (!agent.isConfigured()) {
@@ -499,7 +528,7 @@ app.post('/asistent/mesaj', auth(async (req, res, next) => {
     } catch (_) { /* best-effort — nu blocam raspunsul */ }
 
     return res.json({ ...r, proiectId: p.id });
-  } catch (err) { next(err); }
+  } catch (err) { return eroareAsistent(err, res, 'discutia'); }
 }));
 
 // POST /asistent/construieste — genereaza pagina si creeaza/actualizeaza proiectul
@@ -557,7 +586,7 @@ app.post('/asistent/construieste', auth(async (req, res, next) => {
     req.session.imaginiChat = [];
 
     return res.json({ ...r, proiectId: p.id, proiectURL: `/proiect/${p.id}`, durata });
-  } catch (err) { next(err); }
+  } catch (err) { return eroareAsistent(err, res, 'constructia paginii'); }
 }));
 
 // POST /asistent/modifica — aplica o modificare pe o pagina deja construita
@@ -643,6 +672,29 @@ app.get('/proiect/:id/chat', auth(async (req, res) => {
   const chat = agent.citesteChat(p.workspacePath);
   console.log('[chat] proiect', req.params.id, '→', chat.length, 'mesaje, primul cu cost:', !!(chat[1] && chat[1].cost));
   return res.json(chat);
+}));
+
+// GET /proiect/:id/descarca — fisierele paginii, ca arhiva .zip
+app.get('/proiect/:id/descarca', auth(async (req, res, next) => {
+  try {
+    const p = await store.getProject(req.params.id);
+    if (!p || p.userID !== req.user.id) return res.status(404).send('Proiect negăsit.');
+
+    const dir = agent.caleWorkspace(p.workspacePath);
+    const { buffer, fisiere } = await pachet.construieste(dir, p.name);
+
+    const numeFisier = (pachet.numeSigur(p.name) || 'pagina') + '.zip';
+    console.log(`[descarcare] ${p.name}: ${fisiere.join(', ')} (${buffer.length} octeti)`);
+
+    res.set('Content-Type', 'application/zip');
+    res.set('Content-Disposition', `attachment; filename="${numeFisier}"`);
+    res.set('Content-Length', String(buffer.length));
+    return res.send(buffer);
+  } catch (err) {
+    // Proiectele vechi, generate inainte de asistent, nu au fisiere pe disc.
+    console.warn('[descarcare] a esuat:', err.message);
+    return res.status(404).send('Pagina nu a fost construită încă, deci nu are fișiere de descărcat.');
+  }
 }));
 
 // POST /asistent/reset — porneste o discutie noua
