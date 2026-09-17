@@ -92,13 +92,39 @@
                     data-i18n-ph="input-ph"
                     maxlength="2000"
                     aria-label="Mesaj pentru Vera"></textarea>
+                  <button id="cs-mic" class="ab-mic" type="button" hidden
+                          title="Dictează mesajul (speech-to-text)"
+                          aria-label="Dictează mesajul" aria-pressed="false">
+                    <svg class="ab-mic-ico" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                      <path d="M5 11v1a7 7 0 0 0 14 0v-1"/>
+                      <line x1="12" y1="19" x2="12" y2="22"/>
+                    </svg>
+                  </button>
                   <button id="cs-send" class="ab-send" type="button" disabled aria-label="Trimite">
                     <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                       <path d="M13 7.5L2 2l2 5.5L2 13l11-5.5z" fill="currentColor"/>
                     </svg>
                   </button>
                 </div>
-                <p class="ab-hint" data-i18n="input-hint">Enter trimite · Shift+Enter rând nou</p>
+                <div class="ab-hint-row">
+                  <p class="ab-hint" data-i18n="input-hint">Enter trimite · Shift+Enter rând nou</p>
+                  {# Limba dictarii — independenta de limba interfetei, pentru ca
+                     modelul acustic corect e cel mai important pentru precizie. #}
+                  <span id="cs-dict-lang" class="ab-dict" hidden role="group"
+                        aria-label="Limba dictării">
+                    <span class="ab-dict-lbl" data-i18n="dict-label">Dictare</span>
+                    <button type="button" class="ab-dict-opt" data-dict-lang="auto"
+                            title="Detectează limba din primele cuvinte">AUTO</button>
+                    <span id="cs-dict-active" class="ab-dict-active" hidden></span>
+                    <button type="button" class="ab-dict-opt" data-dict-lang="ro"
+                            title="Dictează în română (ro-RO)">RO</button>
+                    <button type="button" class="ab-dict-opt" data-dict-lang="en"
+                            title="Dictate in English (en-US)">EN</button>
+                  </span>
+                </div>
               </div>
             </div>
 

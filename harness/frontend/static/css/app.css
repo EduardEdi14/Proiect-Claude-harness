@@ -650,6 +650,54 @@ a{color:var(--link);text-decoration:none}
 .ab-send:disabled{opacity:.3;cursor:not-allowed;box-shadow:none}
 .ab-hint{margin:0;font:400 11px var(--font);color:var(--muted-3);text-align:center}
 
+/* Rand de sub bara de input: hint + selector limba dictare */
+.ab-hint-row{
+  display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+}
+.ab-dict{display:inline-flex;align-items:center;gap:4px}
+.ab-dict[hidden]{display:none}
+.ab-dict-lbl{font:400 11px var(--font);color:var(--muted-3)}
+.ab-dict-opt{
+  font:600 10.5px var(--font);letter-spacing:.03em;
+  padding:2px 7px;border-radius:7px;cursor:pointer;
+  background:none;border:1px solid transparent;color:var(--muted-3);
+  transition:background .15s,color .15s,border-color .15s;
+}
+.ab-dict-opt:hover{color:var(--red)}
+.ab-dict-active{
+  font:700 9.5px var(--font);letter-spacing:.06em;
+  padding:1px 5px;border-radius:5px;
+  background:var(--red);color:#fff;
+}
+.ab-dict-active[hidden]{display:none}
+.ab-dict-opt[aria-pressed="true"]{
+  color:var(--red);border-color:var(--line-strong);background:var(--surface);
+}
+
+/* Buton microfon — dictare (speech-to-text) */
+.ab-mic{
+  width:36px;height:36px;flex:none;border-radius:12px;
+  background:none;border:none;cursor:pointer;color:var(--muted-3);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,color .15s,transform .1s;
+}
+.ab-mic:hover:not(:disabled){color:var(--red);background:rgba(194,24,47,.07)}
+.ab-mic:active:not(:disabled){transform:scale(.91)}
+.ab-mic:disabled{opacity:.3;cursor:not-allowed}
+.ab-mic[hidden]{display:none}
+/* starea „ascult acum” */
+.ab-mic.is-recording{color:#fff;background:var(--red);box-shadow:var(--shadow-red)}
+.ab-mic.is-recording:hover{background:var(--red-hover);color:#fff}
+.ab-mic.is-recording .ab-mic-ico{animation:ab-mic-pulse 1.4s ease-in-out infinite}
+@keyframes ab-mic-pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%    {opacity:.55;transform:scale(.86)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ab-mic.is-recording .ab-mic-ico{animation:none}
+}
+
+
 /* ── Tab-uri ─────────────────────────────────────────────────────────── */
 .ab-tabs{
   display:inline-flex;gap:2px;
