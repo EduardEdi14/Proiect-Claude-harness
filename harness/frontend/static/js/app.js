@@ -488,6 +488,7 @@
     "tpl-use-btn": "Use this template →",
     "input-ph": "Describe the page you want…",
     "input-hint": "Enter sends · Shift+Enter new line",
+    "dict-label": "Dictation",
     "preview-label": "Preview", "handoff-btn": "Send to Dev team", "back-home": "← Home",
     // Tool cards (builder)
     "tool-dashboard-name": "Dashboard", "tool-dashboard-desc": "KPIs, charts and a detail table — all on one screen.",
@@ -1428,6 +1429,639 @@
     }
   });
   sendBtn.addEventListener("click", doSend);
+
+  // ── Dictare vocala (speech-to-text) ──────────────────────────────────
+  // Foloseste Web Speech API din browser (Chrome/Edge). Textul recunoscut
+  // se scrie direct in textarea, ca si cum ar fi tastat: rezultatele
+  // intermediare apar live si se "fixeaza" cand fraza e finalizata.
+  //
+  // Precizia nu vine din model (modelul e al browserului), ci din patru
+  // straturi peste el:
+  //   1. limba dictarii e explicita (RO/EN), nu dedusa din limba interfetei;
+  //   2. cerem mai multe variante si alegem pe cea care contine termeni
+  //      din vocabularul aplicatiei (re-ranking pe lexicon);
+  //   3. corectam greselile recurente pe termenii nostri (Libra Maker,
+  //      acronime, diacritice) dupa ce fraza e finalizata;
+  //   4. normalizam punctuatia si spatiile, plus comenzi vocale de punctuatie.
+  (function dictation() {
+    var micBtn  = document.getElementById("cs-mic");
+    var langBox = document.getElementById("cs-dict-lang");
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    // Fara suport in browser (Firefox, Safari vechi) lasam butonul ascuns.
+    if (!micBtn || !SR) return;
+    micBtn.hidden = false;
+    if (langBox) langBox.hidden = false;
+
+    // ── Textele dictarii, in limba interfetei ───────────────────────────
+    // Eticheta "Dictare" se traduce prin mecanismul obisnuit (data-i18n),
+    // dar tooltipurile si mesajele Verei se compun din JS, deci citim limba
+    // in momentul in care le producem — asa sunt mereu corecte, fara sa mai
+    // asculte fiecare de schimbarea limbii.
+    function uiEN() {
+      try { return localStorage.getItem("lm-lang") === "en"; } catch (e) { return false; }
+    }
+
+    var TXT = {
+      ro: {
+        micOn:   "Oprește dictarea",
+        micOff:  "Dictează mesajul (speech-to-text)",
+        tAuto:   "Detectează limba din primele cuvinte",
+        tRo:     "Dictează în română (ro-RO)",
+        tEn:     "Dictează în engleză (en-US)",
+        toEn:    "Am detectat engleză — comut dictarea pe EN. Repetă te rog ultima frază.",
+        toRo:    "Am detectat română — comut dictarea pe RO. Repetă te rog ultima frază.",
+        denied:  "Nu am acces la microfon. Permite microfonul în browser (iconița din bara de adresă) și încearcă din nou.",
+        noMic:   "Nu găsesc niciun microfon. Verifică dacă e conectat și selectat în setările sistemului.",
+        stopped: "Dictarea s-a oprit"
+      },
+      en: {
+        micOn:   "Stop dictation",
+        micOff:  "Dictate your message (speech-to-text)",
+        tAuto:   "Detect the language from your first words",
+        tRo:     "Dictate in Romanian (ro-RO)",
+        tEn:     "Dictate in English (en-US)",
+        toEn:    "Detected English — switching dictation to EN. Please repeat that last phrase.",
+        toRo:    "Detected Romanian — switching dictation to RO. Please repeat that last phrase.",
+        denied:  "I have no microphone access. Allow the microphone in your browser (the icon in the address bar) and try again.",
+        noMic:   "I can't find a microphone. Check that one is connected and selected in your system settings.",
+        stopped: "Dictation stopped"
+      }
+    };
+    function txt(key) { return TXT[uiEN() ? "en" : "ro"][key]; }
+
+    // ── Limba dictarii: AUTO / RO / EN ──────────────────────────────────
+    // dictMode = ce a cerut utilizatorul; dictLang = limba efectiv activa
+    // in motor. In modul AUTO cele doua difera: dictLang e ghicita la
+    // inceput si corectata din text dupa prima fraza (vezi LID mai jos).
+    //
+    // Alegerea explicita RO/EN rămâne cea mai precisa: modelul acustic
+    // potrivit de la prima silaba bate orice detectie de dupa.
+    var dictMode = "auto";
+    try {
+      var saved = localStorage.getItem("lm-dictare");
+      if (saved === "ro" || saved === "en" || saved === "auto") dictMode = saved;
+    } catch (e) {}
+
+    // Cu ce limba pornim in AUTO: ultima limba detectata (cazul obisnuit e
+    // ca omul dicteaza mereu in aceeasi limba, deci a doua data e gratis),
+    // altfel limba interfetei.
+    function lastKnownLang() {
+      try {
+        var last = localStorage.getItem("lm-dictare-ultima");
+        if (last === "ro" || last === "en") return last;
+        return localStorage.getItem("lm-lang") === "en" ? "en" : "ro";
+      } catch (e) { return "ro"; }
+    }
+
+    var dictLang = dictMode === "auto" ? lastKnownLang() : dictMode;
+
+    var activeEl = document.getElementById("cs-dict-active");
+    function paintLangBtns() {
+      if (langBox) {
+        var titles = { auto: txt("tAuto"), ro: txt("tRo"), en: txt("tEn") };
+        Array.prototype.forEach.call(langBox.querySelectorAll("[data-dict-lang]"), function (b) {
+          var m = b.getAttribute("data-dict-lang");
+          b.setAttribute("aria-pressed", m === dictMode ? "true" : "false");
+          if (titles[m]) b.setAttribute("title", titles[m]);
+        });
+      }
+      // In AUTO aratam si ce limba e activa acum, ca sa nu fie o cutie neagra.
+      if (activeEl) {
+        activeEl.textContent = dictMode === "auto" ? dictLang.toUpperCase() : "";
+        activeEl.hidden = dictMode !== "auto";
+      }
+    }
+    paintLangBtns();
+
+    // ── Normalizare pentru comparatii (fara diacritice, minuscule) ──────
+    function norm(s) {
+      return String(s).toLowerCase()
+        .normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .replace(/\s+/g, " ").trim();
+    }
+    function reEsc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+    // ── Lexicon: vocabularul aplicatiei ─────────────────────────────────
+    // Termenii statici plus numele reale de sabloane citite din DOM, ca
+    // lexiconul sa ramana sincronizat cand se adauga sabloane noi.
+    var LEX_STATIC = [
+      // produs
+      "libra maker", "libra bank", "vera", "handoff", "sablon", "previzualizare",
+      // tipuri de pagini
+      "tablou de bord", "grafic din date", "raport", "tabel de date", "formular",
+      "pagina de informare", "formular de colectare", "prezentare", "cerere",
+      "sondaj", "campanie", "onboarding", "anunt", "eveniment", "echipa",
+      "feedback", "program", "beneficii", "cursuri", "regulament",
+      // bancar
+      "credit", "credit ipotecar", "dobanda", "comision", "client", "sucursala",
+      "iban", "card", "cont", "depozit", "rata", "scadenta", "dosar",
+      "aprobare", "semnatura", "beneficiar", "tranzactie", "extras de cont",
+      // structura paginii
+      "buton", "titlu", "subtitlu", "coloana", "rand", "sectiune", "antet",
+      "subsol", "meniu", "filtru", "cautare", "export", "grafic", "legenda",
+      "numar", "procent", "total", "medie",
+      // engleza
+      "dashboard", "chart", "report", "table", "form", "survey", "campaign",
+      "announcement", "event", "team", "schedule", "benefits", "courses",
+      "policy", "presentation", "request", "landing page", "button", "header",
+      "footer", "sidebar", "column", "row", "section", "filter", "search",
+      "endpoint", "legend", "percentage", "average", "mortgage", "loan",
+      "interest rate", "branch", "account", "deposit", "installment",
+      "due date", "statement", "transaction",
+      // tehnice
+      "api", "json", "csv", "pdf", "excel", "sql", "html", "url", "faq", "kpi"
+    ];
+
+    var lexSeen = {};
+    var LEX_RE  = [];
+    function addLex(term) {
+      var n = norm(term);
+      if (!n || n.length < 3 || lexSeen[n]) return;
+      lexSeen[n] = 1;
+      // Granita pe litere/cifre, ca "api" sa nu prinda in "rapid".
+      LEX_RE.push(new RegExp("(^|[^a-z0-9])" + reEsc(n) + "([^a-z0-9]|$)"));
+    }
+    LEX_STATIC.forEach(addLex);
+    // Numele sabloanelor din dropdown si din cardurile paginii.
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".tpl-drop-item[data-value], .ab-card[data-value]"),
+      function (el) { addLex(el.getAttribute("data-value") || ""); }
+    );
+
+    // ── Corectii pe termenii nostri ─────────────────────────────────────
+    // Doar greseli recurente si fara ambiguitate. Ruleaza pe textul
+    // finalizat, niciodata pe cel intermediar.
+    var FIX_COMMON = [
+      // brand — cel mai des stricat
+      [/\b(libr[aă]|libera)\s*(mac[hk]er|meker|mecher|maker)\b/gi, "Libra Maker"],
+      [/\blibr[aă]\s*ban[ckg]\b/gi, "Libra Bank"],
+      [/\bvera\b/g, "Vera"],
+      // termeni compusi auziti despicat
+      [/\bhand\s*-?\s*of+\b/gi, "handoff"],
+      [/\bhendof+\b/gi, "handoff"],
+      [/\be[\s-]+mail\b/gi, "email"],
+      [/\bend\s+point\b/gi, "endpoint"],
+      [/\blanding\s+page?\b/gi, "landing page"],
+      [/\btablou de (board|bordu|bordy)\b/gi, "tablou de bord"],
+      // acronime: dictarea le scrie cu litere mici sau despicate
+      [/\ba\s+p\s+i\b/gi, "API"],
+      [/\bc\s+s\s+v\b/gi, "CSV"],
+      [/\bp\s+d\s+f\b/gi, "PDF"],
+      [/\bj\s+s\s+o\s+n\b/gi, "JSON"],
+      [/\bs\s+q\s+l\b/gi, "SQL"],
+      [/\bh\s+t\s+m\s+l\b/gi, "HTML"],
+      [/\bu\s+r\s+l\b/gi, "URL"],
+      [/\bi\s+b\s+a\s+n\b/gi, "IBAN"],
+      [/\bk\s+p\s+i\b/gi, "KPI"],
+      [/\bf\s+a\s+q\b/gi, "FAQ"],
+      [/\b(api|csv|pdf|json|sql|html|url|iban|kpi|faq)\b/gi, function (m) { return m.toUpperCase(); }],
+      [/\bexcel\b/gi, "Excel"]
+    ];
+
+    // ── Diacritice romanesti ────────────────────────────────────────────
+    // Recunoasterea ro-RO livreaza de obicei diacriticele corect, dar le
+    // pierde pe termeni mai rari si pe formele verbale. Regulile de mai jos
+    // se aplica doar unde lipsesc, deci pe un text deja corect sunt inerte.
+
+    // Schimbari in interiorul radacinii: sufixul (ASCII) ramane neatins,
+    // deci o singura regula acopera toate formele flexionate.
+    function stemFix(plain, fixed) {
+      return [new RegExp("\\b" + plain + "(\\w*)\\b", "gi"), function (m, tail) {
+        var out = fixed + (tail || "");
+        // pastram majuscula initiala daca era la inceput de fraza
+        return /^[A-Z]/.test(m) ? out.charAt(0).toUpperCase() + out.slice(1) : out;
+      }];
+    }
+
+    var FIX_RO = [
+      // radacini stabile — prind si "sablonul", "sectiunea", "tranzactiile"
+      stemFix("sablon",    "șablon"),
+      stemFix("sectiun",   "secțiun"),
+      stemFix("cautar",    "căutar"),
+      stemFix("tranzacti", "tranzacți"),
+      stemFix("semnatur",  "semnătur"),
+      stemFix("anunt",     "anunț"),
+      stemFix("incarcar",  "încărcar"),
+      stemFix("sterger",   "șterger"),
+      stemFix("numar",     "număr"),
+      stemFix("legatur",   "legătur"),
+      stemFix("marim",     "mărim"),
+      stemFix("inaltim",   "înălțim"),
+
+      // forme neregulate (se schimba si vocala finala sau consoana)
+      [/\bdobanda\b/gi,   "dobândă"],
+      [/\bdobanzi\b/gi,   "dobânzi"],
+      [/\bdobanzile\b/gi, "dobânzile"],
+      [/\bdobanzii\b/gi,  "dobânzii"],
+      [/\bscadenta\b/gi,  "scadență"],
+      [/\bscadente\b/gi,  "scadențe"],
+      [/\bscadentei\b/gi, "scadenței"],
+      [/\bsucursala\b/gi, "sucursală"],
+      [/\bcoloana\b/gi,   "coloană"],
+      [/\blegenda\b/gi,   "legendă"],
+      [/\bmarime\b/gi,    "mărime"],
+      [/\bstanga\b/gi,    "stânga"],
+
+      // imperative frecvente in prompturi ("adauga un buton", "exporta in PDF")
+      [/\badauga\b/gi,    "adaugă"],
+      [/\bexporta\b/gi,   "exportă"],
+      [/\bimporta\b/gi,   "importă"],
+      [/\bincarca\b/gi,   "încarcă"],
+      [/\bschimba\b/gi,   "schimbă"],
+      [/\bimparte\b/gi,   "împarte"],
+      [/\bafiseaza\b/gi,  "afișează"],
+      [/\bstearga\b/gi,   "șteargă"],
+
+      // Reguli generale de ortografie — valabile pentru orice cuvant din
+      // clasa respectiva, nu doar pentru vocabularul nostru. Ruleaza la
+      // final, deci nu ating ce s-a corectat deja mai sus.
+      [/\b(\w+)eaza\b/gi,     "$1ează"],  // sorteaza → sortează
+      [/\b(\w{3,})tiile\b/gi, "$1țiile"], // informatiile → informațiile
+      [/\b(\w{3,})tiei\b/gi,  "$1ției"],  // sectiunii-tip: informatiei → informației
+      [/\b(\w{3,})tii\b/gi,   "$1ții"],   // conditii → condiții
+      [/\b(\w{3,})tie\b/gi,   "$1ție"]    // informatie → informație
+    ];
+
+    // ── Identificarea limbii din text (LID) ─────────────────────────────
+    // Web Speech API nu detecteaza limba: rec.lang se fixeaza la pornire si
+    // nu se mai schimba. Deci detectam limba din ce a transcris motorul si
+    // comutam pentru restul dictarii.
+    //
+    // Capcana principala: romana tehnica e plina de cuvinte englezesti
+    // ("vreau un dashboard cu KPI"). De aceea termenii tehnici comuni sunt
+    // NEUTRI — nu conteaza ca dovada pentru engleza.
+
+    // Cuvinte gramaticale: cele mai bune indicii, pentru ca apar des si
+    // nu se imprumuta intre limbi.
+    var LID_RO = ("si sa se un o de la cu pe in din pentru care este sunt " +
+      "vreau vrea vream face fac facem adauga arata pune schimba scoate " +
+      "mai foarte dar sau nu da ca ce cum unde cand toate toata fiecare " +
+      "acest aceasta acel acea asta astea lui ei meu mea mele noi voi " +
+      "am ai are avem aveti au fost fie doar cate niste alta alte altul " +
+      "sus jos stanga dreapta dedesubt deasupra langa intre fara catre " +
+      "pagina tabel buton titlu subtitlu coloana rand sectiune cerere " +
+      "raport formular sondaj filtru cautare clienti client luna anul " +
+      "vreo cred trebuie poti poate hai gata bine mulcumesc").split(" ");
+
+    var LID_EN = ("the a an of to in on with for and or not is are was were " +
+      "i you we they it this that these those my your our their there here " +
+      "want make add show put change remove need can could please just " +
+      "all each every some any other another more most less very but so " +
+      "up down left right below above next between without toward " +
+      "page button title subtitle column section request survey " +
+      "clients month year think should would thanks done fine").split(" ");
+
+    // Termeni pe care un vorbitor de romana ii spune in engleza — nu pot
+    // decide limba, deci nu se numara pentru niciuna.
+    var LID_NEUTRAL = ("dashboard chart charts api json csv pdf excel sql " +
+      "html url faq kpi endpoint feedback onboarding handoff card cards " +
+      "export import email layout header footer sidebar landing page " +
+      "template design preview login logout ok").split(" ");
+
+    function toSet(arr) {
+      var m = {};
+      for (var i = 0; i < arr.length; i++) if (arr[i]) m[arr[i]] = 1;
+      return m;
+    }
+    var RO_SET = toSet(LID_RO), EN_SET = toSet(LID_EN), NEUTRAL_SET = toSet(LID_NEUTRAL);
+
+    // Terminatii si grupuri de litere caracteristice, ca sa nu depindem
+    // doar de lista de cuvinte pe fraze scurte.
+    var RO_SUFFIX = [/ul$/, /ului$/, /ele$/, /elor$/, /ilor$/, /uri$/, /urile$/,
+                     /eaza$/, /esti$/, /esc$/, /area$/, /area$/, /iile$/, /ata$/];
+    var EN_SUFFIX = [/ing$/, /tion$/, /ment$/, /ness$/, /ly$/, /ed$/];
+
+    /**
+     * Decide daca textul e romanesc sau englezesc.
+     * @param {string} text  transcriere BRUTA (inainte de polish, care ar
+     *                       adauga diacritice si ar falsifica rezultatul).
+     * @returns {{lang:string, margin:number, tokens:number}|null}
+     *          margin = cat de mult conduce limba castigatoare, per cuvant
+     *          "de dovada". Sub pragul de decizie, apelantul nu comuta.
+     */
+    function detectLang(text) {
+      var raw = String(text || "");
+      var n   = norm(raw);
+      var toks = n.split(/[^a-z0-9]+/).filter(Boolean);
+      if (!toks.length) return null;
+
+      var ro = 0, en = 0, evidence = 0;
+
+      // 1. Diacriticele sunt dovada puternica si aproape sigura de romana.
+      //    (Le citim din textul brut — norm() le-a scos.)
+      var dia = (raw.match(/[ăâîșțĂÂÎȘȚ]/g) || []).length;
+      if (dia) { ro += Math.min(dia, 5) * 1.6; evidence += Math.min(dia, 5); }
+
+      // 2. Cuvinte gramaticale, sarind peste termenii neutri.
+      for (var i = 0; i < toks.length; i++) {
+        var t = toks[i];
+        if (NEUTRAL_SET[t]) continue;
+        var hit = false;
+        if (RO_SET[t]) { ro += 1.0; hit = true; }
+        if (EN_SET[t]) { en += 1.0; hit = true; }
+        if (hit) { evidence += 1; continue; }
+
+        // 3. Terminatii caracteristice, pentru cuvintele din afara listelor.
+        var j;
+        for (j = 0; j < RO_SUFFIX.length; j++) {
+          if (RO_SUFFIX[j].test(t)) { ro += 0.6; evidence += 0.6; break; }
+        }
+        for (j = 0; j < EN_SUFFIX.length; j++) {
+          if (EN_SUFFIX[j].test(t)) { en += 0.6; evidence += 0.6; break; }
+        }
+      }
+
+      // 4. Grupuri de litere: "th" practic nu exista in romana, iar w/q
+      //    apar doar in imprumuturi (deja excluse ca neutre).
+      var th = (n.match(/th/g) || []).length;
+      if (th) { en += Math.min(th, 3) * 0.9; evidence += Math.min(th, 3) * 0.6; }
+      var wq = (n.match(/[wq]/g) || []).length;
+      if (wq) { en += Math.min(wq, 3) * 0.5; evidence += Math.min(wq, 3) * 0.3; }
+
+      if (evidence < 1) return null;   // nimic pe care sa ne bazam
+
+      var lang   = ro >= en ? "ro" : "en";
+      var margin = Math.abs(ro - en) / Math.max(evidence, 1);
+      return { lang: lang, margin: margin, tokens: toks.length };
+    }
+
+    // Pragul de comutare: destul de sus ca o fraza ambigua sa nu schimbe
+    // limba, destul de jos ca o propozitie normala sa fie clara.
+    var LID_MIN_MARGIN = 0.34;
+    var LID_MIN_TOKENS = 3;
+
+    function shouldSwitch(text, current) {
+      var d = detectLang(text);
+      if (!d) return null;
+      if (d.tokens < LID_MIN_TOKENS) return null;
+      if (d.margin < LID_MIN_MARGIN) return null;
+      return d.lang === current ? null : d.lang;
+    }
+
+    // Comenzi vocale de punctuatie. "punct" / "period" doar la finalul
+    // frazei, unde e aproape sigur punctuatie si nu cuvantul in sine —
+    // "in acest punct" ramane intact.
+    var CMD_INLINE = {
+      ro: [
+        [/\bvirgul[aă]\b/gi, ","],
+        [/\bpunct (si|și) virgul[aă]\b/gi, ";"],
+        [/\bdou[aă] puncte\b/gi, ":"],
+        [/\bsemnul (întreb[aă]rii|intrebarii)\b/gi, "?"],
+        [/\bsemnul (exclam[aă]rii|exclamarii)\b/gi, "!"],
+        [/\b(r[aâ]nd nou|linie nou[aă])\b/gi, "\n"],
+        [/\bparagraf nou\b/gi, "\n\n"]
+      ],
+      en: [
+        [/\bcomma\b/gi, ","],
+        [/\bsemicolon\b/gi, ";"],
+        [/\bcolon\b/gi, ":"],
+        [/\bquestion mark\b/gi, "?"],
+        [/\bexclamation (mark|point)\b/gi, "!"],
+        [/\bnew line\b/gi, "\n"],
+        [/\bnew paragraph\b/gi, "\n\n"]
+      ]
+    };
+    var CMD_TAIL = {
+      ro: [[/\s*\bpunct\s*$/i, "."]],
+      en: [[/\s*\b(period|full stop)\s*$/i, "."]]
+    };
+
+    function applyList(text, list) {
+      for (var i = 0; i < list.length; i++) text = text.replace(list[i][0], list[i][1]);
+      return text;
+    }
+
+    // Spatii si majuscule: fara spatiu inainte de punctuatie, un spatiu
+    // dupa, majuscula la inceput de fraza.
+    function tidy(text) {
+      return text
+        .replace(/[ \t]+/g, " ")
+        .replace(/\s+([,.;:!?])/g, "$1")
+        .replace(/([,;:])(?=[^\s])/g, "$1 ")
+        .replace(/([.!?])(?=[^\s.!?])/g, "$1 ")
+        .replace(/[ \t]*\n[ \t]*/g, "\n")
+        .replace(/(^|[.!?]\s+|\n\s*)([a-zăâîșț])/g, function (m, pre, ch) {
+          return pre + ch.toUpperCase();
+        });
+    }
+
+    // Pasul complet de curatare, aplicat unei fraze finalizate.
+    function polish(text) {
+      var out = applyList(text, CMD_INLINE[dictLang] || CMD_INLINE.ro);
+      out = applyList(out, CMD_TAIL[dictLang] || CMD_TAIL.ro);
+      out = applyList(out, FIX_COMMON);
+      if (dictLang === "ro") out = applyList(out, FIX_RO);
+      return tidy(out);
+    }
+
+    // ── Re-ranking pe lexicon ───────────────────────────────────────────
+    // Browserul intoarce pana la 5 variante. Prima e cea mai buna acustic,
+    // dar nu stie nimic despre vocabularul nostru: daca alta varianta
+    // conteaza termeni cunoscuti, o preferam.
+    function lexHits(text) {
+      var n = " " + norm(text) + " ", hits = 0;
+      for (var i = 0; i < LEX_RE.length; i++) if (LEX_RE[i].test(n)) hits++;
+      return hits;
+    }
+
+    function bestAlternative(result) {
+      var best = result[0], bestScore = -Infinity;
+      var n = Math.min(result.length, 5);
+      for (var i = 0; i < n; i++) {
+        var alt = result[i];
+        if (!alt || !alt.transcript) continue;
+        // Termenii cunoscuti cantaresc mai mult decat increderea acustica,
+        // dar increderea decide la egalitate; -i rupe egalitatea perfecta
+        // in favoarea variantei de pe prima pozitie.
+        var score = lexHits(alt.transcript)
+                  + (typeof alt.confidence === "number" ? alt.confidence : 0) * 0.35
+                  - i * 0.01;
+        if (score > bestScore) { bestScore = score; best = alt; }
+      }
+      return (best && best.transcript) || "";
+    }
+
+    // ── Stare ───────────────────────────────────────────────────────────
+    var rec            = null;
+    var recording      = false;
+    var manualStop     = false;
+    var fatal          = false;
+    var restartForLang = false;
+    var langLocked     = dictMode !== "auto";  // in AUTO, pana la prima decizie
+    var baseText       = "";   // ce era in textarea cand a pornit dictarea
+    var finalText      = "";   // frazele finalizate in sesiunea curenta
+
+    // Lipeste doua fragmente: un spatiu intre ele, dar nu inainte de
+    // punctuatie si nu dupa un rand nou.
+    function join(a, b) {
+      if (!a) return b || "";
+      if (!b) return a;
+      if (/\n$/.test(a)) return a + b.replace(/^\s+/, "");
+      if (/^[,.;:!?]/.test(b)) return a.replace(/\s+$/, "") + b;
+      return a.replace(/\s+$/, "") + " " + b.replace(/^\s+/, "");
+    }
+
+    function paint(interim) {
+      input.value = join(join(baseText, finalText), interim);
+      resize();
+      syncSend();
+    }
+
+    function setUi(on) {
+      micBtn.classList.toggle("is-recording", on);
+      micBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      var label = on ? txt("micOn") : txt("micOff");
+      micBtn.setAttribute("title", label);
+      micBtn.setAttribute("aria-label", label);
+    }
+
+    // ── Comutarea limbii in AUTO ────────────────────────────────────────
+    // Motorul nu poate schimba limba in zbor: rec.lang se citeste o data,
+    // la start. Deci repornim recunoasterea cu limba noua, iar fraza care
+    // a declansat detectia e pierduta (a fost transcrisa cu modelul
+    // gresit, deci e oricum inutilizabila) — de aceea cerem repetarea.
+    function switchLang(to) {
+      dictLang   = to;
+      langLocked = true;                 // o singura comutare pe sesiune
+      try { localStorage.setItem("lm-dictare-ultima", to); } catch (e) {}
+      paintLangBtns();
+      addVera(txt(to === "en" ? "toEn" : "toRo"));
+      restartForLang = true;
+      stop();
+    }
+
+    function start() {
+      if (recording || busy) return;
+      rec        = new SR();
+      rec.lang   = dictLang === "en" ? "en-US" : "ro-RO";
+      rec.continuous      = true;
+      rec.interimResults  = true;
+      rec.maxAlternatives = 5;
+
+      rec.onresult = function (ev) {
+        var interim = "";
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          var res = ev.results[i];
+          if (!res.isFinal) {
+            // Intermediarul ramane brut — corectiile l-ar face sa palpaie.
+            interim = join(interim, res[0].transcript);
+            continue;
+          }
+
+          // Fraza finalizata: alegem intre alternative.
+          var raw = bestAlternative(res);
+
+          // In AUTO, prima fraza cu destule indicii decide limba. Detectia
+          // ruleaza pe textul BRUT: polish() ar adauga diacritice
+          // romanesti si ar trage rezultatul spre romana.
+          if (!langLocked) {
+            var other = shouldSwitch(raw, dictLang);
+            if (other) { switchLang(other); return; }
+            var d = detectLang(raw);
+            // Destule indicii pentru limba curenta → nu mai verificam.
+            if (d && d.tokens >= LID_MIN_TOKENS && d.margin >= LID_MIN_MARGIN) {
+              langLocked = true;
+              try { localStorage.setItem("lm-dictare-ultima", dictLang); } catch (e) {}
+            }
+          }
+
+          finalText = join(finalText, polish(raw));
+        }
+        paint(interim);
+      };
+
+      rec.onerror = function (ev) {
+        if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
+          fatal = true;
+          addVera(txt("denied"));
+        } else if (ev.error === "audio-capture") {
+          fatal = true;
+          addVera(txt("noMic"));
+        } else if (ev.error !== "no-speech" && ev.error !== "aborted") {
+          fatal = true;
+          addVera(txt("stopped") + " (" + ev.error + ").");
+        }
+      };
+
+      rec.onend = function () {
+        // Chrome inchide recunoasterea dupa o pauza de liniste; daca
+        // utilizatorul nu a apasat stop, repornim ca sa poata continua.
+        if (recording && !manualStop && !fatal) {
+          try { rec.start(); return; } catch (e) { /* cade in reset */ }
+        }
+        recording = false;
+        setUi(false);
+        paint("");            // renunta la interimul nefinalizat
+        baseText  = input.value;
+        finalText = "";
+        // Repornire cu limba nou detectata sau nou aleasa.
+        if (restartForLang) { restartForLang = false; start(); }
+      };
+
+      baseText   = input.value;
+      finalText  = "";
+      manualStop = false;
+      fatal      = false;
+      try { rec.start(); } catch (e) { return; }
+      recording = true;
+      setUi(true);
+      input.focus();
+    }
+
+    function stop() {
+      if (!recording || !rec) return;
+      manualStop = true;
+      try { rec.stop(); } catch (e) { recording = false; setUi(false); }
+    }
+
+    micBtn.addEventListener("click", function () {
+      if (recording) stop(); else start();
+    });
+
+    // ── Selectorul AUTO / RO / EN ───────────────────────────────────────
+    if (langBox) {
+      Array.prototype.forEach.call(langBox.querySelectorAll("[data-dict-lang]"), function (b) {
+        b.addEventListener("click", function () {
+          var m = b.getAttribute("data-dict-lang");
+          dictMode = (m === "ro" || m === "en") ? m : "auto";
+          try { localStorage.setItem("lm-dictare", dictMode); } catch (e) {}
+
+          if (dictMode === "auto") {
+            // Reluam detectia de la zero, plecand de la ultima limba stiuta.
+            langLocked = false;
+            dictLang   = lastKnownLang();
+          } else {
+            langLocked = true;      // alegere explicita: fara detectie
+            dictLang   = dictMode;
+          }
+          paintLangBtns();
+          // Limba se fixeaza la pornirea recunoasterii, deci repornim.
+          if (recording) { restartForLang = true; stop(); }
+        });
+      });
+    }
+
+    // Schimbarea limbii interfetei rescrie si tooltipurile dictarii.
+    Array.prototype.forEach.call(document.querySelectorAll("[data-lang-set]"), function (b) {
+      b.addEventListener("click", function () { setTimeout(paintLangBtns, 0); });
+    });
+
+    // Daca utilizatorul tasteaza in timpul dictarii, textul lui devine
+    // noua baza — altfel urmatorul paint i-ar suprascrie editarea.
+    input.addEventListener("input", function () {
+      if (!recording) return;
+      baseText  = input.value;
+      finalText = "";
+    });
+
+    // Oprim dictarea o data ce mesajul pleaca. Aceste handlere ruleaza
+    // dupa cele de trimitere, deci textul a fost deja preluat.
+    sendBtn.addEventListener("click", stop);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) stop();
+    });
+    window.addEventListener("beforeunload", stop);
+  })();
 
   // Template cards pre-fill the textarea with the example prompt.
   Array.prototype.forEach.call(document.querySelectorAll(".ab-card"), function (card) {
