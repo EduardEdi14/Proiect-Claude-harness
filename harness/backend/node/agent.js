@@ -52,6 +52,12 @@ function salveazaPagina(workspacePath, html, { nume, descriere, skill }) {
   return { dir, fisiere: ['index.html', 'NOTE.md'] };
 }
 
+/** Calea absoluta a workspace-ului unei sesiuni. Singurul loc care stie
+ *  unde stau fisierele, ca sa nu se calculeze in doua feluri diferite. */
+function caleWorkspace(workspacePath) {
+  return path.join(RADACINA_WS, workspacePath);
+}
+
 /** Citeste pagina salvata a unei sesiuni; null daca nu exista inca. */
 function citestePagina(workspacePath) {
   const f = path.join(RADACINA_WS, workspacePath, 'index.html');
@@ -403,6 +409,6 @@ async function modifica(mesaj, htmlCurent, imagini) {
 module.exports = {
   isConfigured, lipsuri, raspunde, construieste, modifica, calculeazaCost,
   construiesteContentMultimodal,
-  salveazaPagina, citestePagina, salveazaChat, citesteChat,
+  salveazaPagina, citestePagina, caleWorkspace, salveazaChat, citesteChat,
   DEPLOYMENT, NUME: persona.NUME,
 };
